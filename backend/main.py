@@ -3,19 +3,13 @@ import os
 import tempfile
 import uuid
 import shutil
-import threading
-from flask import Flask, request, jsonify, abort, Response
-import uuid
-import shutil
-import tempfile
-import os
 import gc
 import argparse
 import logging
 from PIL import Image
 import torch
 from diffusers import AutoPipelineForImage2Image, DEISMultistepScheduler
-from flask import Flask
+from flask import Flask, request, abort, Response, FileResponse
 
 last_generated_image = None
 
@@ -82,7 +76,7 @@ def run_warmup(pipe, image: Image.Image, guidance_scale):
             prompt="simple warmup",
             image=[image],
             num_inference_steps=5,
-            guidance_scale=guidance_scale # .0,
+            guidance_scale=guidance_scale  # .0,
         )
     except Exception as e:
         logging.warning(f"Warmup fehlgeschlagen (wird ignoriert): {e}")
