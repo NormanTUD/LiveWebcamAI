@@ -153,7 +153,6 @@ def main() -> None:
     setup_logging()
     clean_memory()
 
-    args = parse_args()
     init_image = load_image(args.input)
 
     result = run_image2image_pipeline(
@@ -236,10 +235,10 @@ def generate():
     return Response(base64.b64encode(open(output_path, "rb").read()).decode(), mimetype="text/plain")
 
 device, dtype = check_cuda()
+args = parse_args()
 
 if __name__ == "__main__":
     print("Parsing parameters")
-    args = parse_args()
 
     print("Checking Cuda")
     device, dtype = check_cuda()
