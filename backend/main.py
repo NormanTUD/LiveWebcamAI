@@ -9,7 +9,7 @@ import logging
 from PIL import Image
 import torch
 from diffusers import AutoPipelineForImage2Image, DEISMultistepScheduler
-from flask import Flask, request, abort, Response, FileResponse
+from flask import Flask, request, abort, Response
 
 last_generated_image = None
 
@@ -228,10 +228,6 @@ def generate():
 
     # Antwort senden (hier: Dateiname und Pfad im tmp, anpassen je nach Usecase)
     return Response(base64.b64encode(open(output_path, "rb").read()).decode(), mimetype="text/plain")
-
-# Datei als Antwort (direkt anzeigen im Browser)
-    print(f"Returning file response: {output_path}")
-    return FileResponse(output_path, media_type="image/png")
 
 if __name__ == "__main__":
     print("Parsing parameters")
