@@ -36,7 +36,7 @@ def clean_memory() -> None:
 def check_cuda() -> None:
     if not torch.cuda.is_available():
         logging.error("CUDA ist nicht verfügbar – überprüfe deine PyTorch/GPU-Installation!")
-        exit(1)
+        sys.exit(1)
     logging.info(f"CUDA verfügbar: {torch.cuda.get_device_name(0)}")
     return "cuda", torch.float16
 
@@ -44,15 +44,15 @@ def check_cuda() -> None:
 def load_image(path: str, size=(512, 512)) -> Image.Image:
     if not os.path.exists(path):
         logging.error(f"Bilddatei '{path}' nicht gefunden!")
-        exit(1)
+        sys.exit(1)
     try:
         return Image.open(path).convert("RGB").resize(size)
     except Exception as e:
         logging.error(f"Fehler beim Laden oder Verarbeiten des Bildes: {e}")
-        exit(1)
+        sys.exit(1)
 
 @beartype
-def load_pipeline(model_id: str, device: str, dtype=torch.float16):
+def load_pipeline(model_id: str):
     global pipe
 
     try:
@@ -74,10 +74,10 @@ def load_pipeline(model_id: str, device: str, dtype=torch.float16):
         return pipe
     except Exception as e:
         logging.error(f"Fehler beim Laden der Pipeline: {e}")
-        exit(1)
+        sys.exit(1)
 
 @beartype
-def run_warmup(pipe, image: Image.Image, guidance_scale):
+def run_warmup(image: Image.Image, guidance_scale):
     try:
         logging.info("Führe Warmup-Durchlauf durch...")
         _ = pipe(
@@ -97,9 +97,7 @@ def run_image2image_pipeline(
     guidance_scale: float,
     strength: float = 0.3,
     init_image: Optional[Image.Image] = None,  # default None
-    seed: int = 33,
-    device: str = "cuda",
-    dtype=torch.float16,
+    seed: int = 33
 ) -> Image.Image:
     global LAST_GENERATED_IMAGE 
 
@@ -111,7 +109,7 @@ def run_image2image_pipeline(
         logging.info("Verwende vorheriges generiertes Bild als init_image.")
         init_image = LAST_GENERATED_IMAGE
 
-    run_warmup(pipe, init_image, guidance_scale)
+    run_warmup(init_image, guidance_scale)
 
     generator = torch.Generator(device=device).manual_seed(seed)
 
@@ -128,11 +126,11 @@ def run_image2image_pipeline(
 
     if output and output.images and len(output.images) > 0:
         result = output.images[0]
-        last_generated_image = result  # Merke dieses Bild für den nächsten Durchlauf
+        LAST_GENERATED_IMAGE = result  # Merke dieses Bild für den nächsten Durchlauf
         return result
-    else:
-        logging.error("Kein Bild wurde generiert!")
-        return None
+
+    logging.error("Kein Bild wurde generiert!")
+    return None
 
 @beartype
 def parse_args():
@@ -220,8 +218,6 @@ def generate():
         guidance_scale=float(request.form.get("scale", 7.5)),
         init_image=init_image,
         seed=int(request.form.get("seed", 33)),
-        device=device,
-        dtype=dtype,
         strength=float(request.form.get("strength", 0.4))
     )
     print("Pipeline finished.")
@@ -248,7 +244,7 @@ if __name__ == "__main__":
     device, dtype = check_cuda()
 
     print("Loading Pipeline")
-    load_pipeline(args.model, device, dtype)
+    load_pipeline(args.model)
 
     if args.server:
         app.run(host="0.0.0.0", port=9932)
