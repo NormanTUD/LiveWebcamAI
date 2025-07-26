@@ -94,7 +94,7 @@ def run_image2image_pipeline(
     negative_prompt: str,
     num_inference_steps: int,
     guidance_scale: float,
-    strength: float,
+    strength: float = 0.3,
     init_image: Image.Image = None,  # default None
     model_id: str = "lykon/dreamshaper-8",
     seed: int = 33,

@@ -9,23 +9,16 @@ import time
 import os
 import sys
 import time
+from beartype import beartype
 
 app = Flask(__name__)
 
+@beartype
 @app.route("/")
 def index():
     return render_template("index.html")
 
-@app.route("/test")
-def test():
-    return "Test läuft"
-
-@app.route("/viewer")
-def viewer():
-    return render_template("viewer.html")
-
-
-
+@beartype
 @app.route("/generate", methods=["POST"])
 def proxy_process():
     file = request.files.get("input")  # Name sollte "input" sein, wie im Backend erwartet
@@ -77,4 +70,3 @@ def proxy_process():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
