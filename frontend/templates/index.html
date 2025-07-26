@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎥 Diffusion Control Panel</title>
+  <meta name="description" content="Sende Live-Bilder deiner Webcam an Stable Diffusion zur Bildgenerierung.">
+  <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+  <div class="left">
+    <h1>🎥 Kamera</h1>
+    <video id="webcam" autoplay muted playsinline></video>
+    <input type="text" id="prompt" placeholder="Beschreibe den Stil…" />
+    <input type="text" id="negative_prompt" placeholder="Negativer Prompt (z.B. unerwünschte Inhalte)…" />
+
+    <label for="num_inference_steps">Number of Inference Steps: <span id="steps_val">5</span></label><br/>
+    <input type="range" id="num_inference_steps" name="num_inference_steps" min="1" max="50" value="5" oninput="document.getElementById('steps_val').innerText = this.value" /><br/><br/>
+
+    <label for="guidance_scale">Guidance Scale: <span id="scale_val">7.5</span></label><br/>
+    <input type="range" id="guidance_scale" name="guidance_scale" min="1" max="15" step="0.1" value="7.5" oninput="document.getElementById('scale_val').innerText = this.value" /><br/><br/>
+
+    <label for="strength">Image Strength: <span id="strength_val">0.5</span></label><br/>
+    <input type="range" id="strength" name="strength" min="0" max="1" step="0.01" value="0.5" oninput>
+
+    <br>
+
+    <div class="info"><span id="latency">Warte auf Bild…</span></div>
+    <div id="error" class="error" style="display:none;"></div>
+  </div>
+
+<div class="right">
+  <h1>🎨 Ergebnis</h1>
+  <video id="processedVideo" controls autoplay muted playsinline style="display:none;"></video>
+  <!-- Hier für Bild-Ergebnis -->
+  <img id="processedImage" style="display:none; max-width:100%;"/>
+</div>
+
+
+<script>
+  const video = document.getElementById('webcam');
+  const promptInput = document.getElementById('prompt');
+  const latencyDisplay = document.getElementById('latency');
+  const errorBox = document.getElementById('error');
+  const output = document.getElementById('output'); // bleibt als img ungenutzt
+
+  let mediaRecorder;
+  let recordedBlobs = [];
+  let delay = 1;
+
+  async function startWebcam() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+
+      const options = { mimeType: 'video/webm; codecs=vp8' };
+      mediaRecorder = new MediaRecorder(stream, options);
+
+      mediaRecorder.ondataavailable = event => {
+        if (event.data && event.data.size > 0) {
+          recordedBlobs.push(event.data);
+        }
+      };
+    } catch (err) {
+      showError("Kein Zugriff auf Kamera: " + err.message);
+    }
+  }
+
+  async function getFrameBlob(video) {
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    return new Promise(resolve => {
+      canvas.toBlob(blob => resolve(blob), 'image/png');
+    });
+  }
+
+async function sendImage() {
+  console.group("sendImage Start");
+
+  const blob = await getFrameBlob(video);
+  if (!blob) {
+    showError("Konnte Bildblob nicht erstellen");
+    console.groupEnd();
+    return;
+  }
+
+  const form = new FormData();
+  form.append("strength", document.getElementById('strength').value || "0.5");
+  form.append("input", blob, "frame.png");
+  form.append("prompt", promptInput.value || "artistic style");
+  form.append("negative_prompt", document.getElementById('negative_prompt').value || "");
+  form.append("steps", document.getElementById('num_inference_steps').value || "25");
+  form.append("scale", document.getElementById('guidance_scale').value || "7.5");
+  form.append("seed", "33");
+  form.append("model", "lykon/dreamshaper-8");
+
+  const start = performance.now();
+
+  try {
+    const res = await fetch("/generate", {
+      method: "POST",
+      body: form,
+    });
+
+    if (!res.ok) throw new Error(`Server antwortete mit Status ${res.status}`);
+
+    const base64str = await res.text();
+
+    // base64str ist der reine Base64-String, wir bauen daraus Data-URL für PNG
+    const dataUrl = "data:image/png;base64," + base64str.trim();
+
+    const processedImage = document.getElementById("processedImage");
+    const processedVideo = document.getElementById("processedVideo");
+
+    // Video verstecken
+    processedVideo.style.display = "none";
+    processedVideo.pause();
+    processedVideo.src = "";
+
+    // Bild zeigen und Quelle setzen
+    processedImage.style.display = "block";
+    processedImage.src = dataUrl;
+
+    const latency = (performance.now() - start) / 1000;
+    latencyDisplay.textContent = `Verarbeitung: ${latency.toFixed(2)} Sekunden`;
+    errorBox.style.display = "none";
+
+  } catch (e) {
+    showError("Fehler beim Senden: " + e.message);
+  }
+
+  console.groupEnd();
+}
+
+
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.style.display = "block";
+  }
+
+  async function loop() {
+    await sendImage();
+    setTimeout(loop, delay);
+  }
+
+  startWebcam().then(loop);
+</script>
+
+</body>
+</html>
