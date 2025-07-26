@@ -13,7 +13,7 @@ from diffusers import AutoPipelineForImage2Image, DEISMultistepScheduler
 from flask import Flask, request, abort, Response
 from beartype import beartype
 
-last_generated_image = None
+LAST_GENERATED_IMAGE = None
 
 app = Flask(__name__)
 
@@ -102,15 +102,15 @@ def run_image2image_pipeline(
     device: str = "cuda",
     dtype=torch.float16,
 ) -> Image.Image:
-    global last_generated_image
+    global LAST_GENERATED_IMAGE 
 
     # Wenn kein init_image übergeben wurde, verwende das letzte
     if init_image is None:
-        if last_generated_image is None:
+        if LAST_GENERATED_IMAGE is None:
             logging.error("Kein Startbild übergeben und auch kein vorheriges Bild vorhanden.")
             return None
         logging.info("Verwende vorheriges generiertes Bild als init_image.")
-        init_image = last_generated_image
+        init_image = LAST_GENERATED_IMAGE
 
     run_warmup(pipe, init_image, guidance_scale)
 
