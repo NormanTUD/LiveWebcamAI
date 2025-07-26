@@ -10,6 +10,7 @@ from PIL import Image
 import torch
 from diffusers import AutoPipelineForImage2Image, DEISMultistepScheduler
 from flask import Flask, request, abort, Response
+from beartype import beartype
 
 last_generated_image = None
 
@@ -20,21 +21,25 @@ pipe = None
 # Max 50 MB Upload limit (50 * 1024 * 1024 bytes)
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024
 
-def setup_logging():
+@beartype
+def setup_logging() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
-def clean_memory():
+@beartype
+def clean_memory() -> None:
     gc.collect()
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
 
-def check_cuda():
+@beartype
+def check_cuda() -> None:
     if not torch.cuda.is_available():
         logging.error("CUDA ist nicht verfügbar – überprüfe deine PyTorch/GPU-Installation!")
         exit(1)
     logging.info(f"CUDA verfügbar: {torch.cuda.get_device_name(0)}")
     return "cuda", torch.float16
 
+@beartype
 def load_image(path: str, size=(512, 512)) -> Image.Image:
     if not os.path.exists(path):
         logging.error(f"Bilddatei '{path}' nicht gefunden!")
@@ -45,6 +50,7 @@ def load_image(path: str, size=(512, 512)) -> Image.Image:
         logging.error(f"Fehler beim Laden oder Verarbeiten des Bildes: {e}")
         exit(1)
 
+@beartype
 def load_pipeline(model_id: str, device: str, dtype=torch.float16):
     global pipe
 
@@ -69,6 +75,7 @@ def load_pipeline(model_id: str, device: str, dtype=torch.float16):
         logging.error(f"Fehler beim Laden der Pipeline: {e}")
         exit(1)
 
+@beartype
 def run_warmup(pipe, image: Image.Image, guidance_scale):
     try:
         logging.info("Führe Warmup-Durchlauf durch...")
@@ -81,6 +88,7 @@ def run_warmup(pipe, image: Image.Image, guidance_scale):
     except Exception as e:
         logging.warning(f"Warmup fehlgeschlagen (wird ignoriert): {e}")
 
+@beartype
 def run_image2image_pipeline(
     prompt: str,
     negative_prompt: str,
@@ -126,6 +134,7 @@ def run_image2image_pipeline(
         logging.error("Kein Bild wurde generiert!")
         return None
 
+@beartype
 def parse_args():
     parser = argparse.ArgumentParser(description="Image2Image mit Diffusers (dreamshaper-8)")
     parser.add_argument("--input", help="Pfad zum Eingabebild (z.B. 1.jpg)")
@@ -139,7 +148,8 @@ def parse_args():
     parser.add_argument("--server", action="store_true", default=False, help="Starte den FastAPI-Server (default: False)")
     return parser.parse_args()
 
-def main():
+@beartype
+def main() -> None:
     setup_logging()
     clean_memory()
     device, dtype = check_cuda()
@@ -163,6 +173,7 @@ def main():
         result.save(args.output)
         logging.info(f"Fertig! Ergebnis gespeichert als {args.output}")
 
+@beartype
 @app.route("/generate", methods=["POST"])
 def generate():
     # Datei auslesen
