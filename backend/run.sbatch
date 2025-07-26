@@ -18,4 +18,4 @@ source "$VENV_DIR/bin/activate"
 
 pip install -r requirements.txt
 
-python3 test.py --server
+python3 main.py --server
