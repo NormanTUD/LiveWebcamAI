@@ -1,4 +1,4 @@
-from typing import Optional
+import sys
 import base64
 import os
 import tempfile
@@ -7,6 +7,9 @@ import shutil
 import gc
 import argparse
 import logging
+
+from typing import Optional
+
 from PIL import Image
 import torch
 from diffusers import AutoPipelineForImage2Image, DEISMultistepScheduler
@@ -17,7 +20,7 @@ LAST_GENERATED_IMAGE = None
 
 app = Flask(__name__)
 
-pipe = None
+PIPE = None
 
 # Max 50 MB Upload limit (50 * 1024 * 1024 bytes)
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024
@@ -53,25 +56,24 @@ def load_image(path: str, size=(512, 512)) -> Image.Image:
 
 @beartype
 def load_pipeline(model_id: str):
-    global pipe
+    global PIPE
 
     try:
         logging.info("Lade Pipeline...")
-        pipe = AutoPipelineForImage2Image.from_pretrained(
+        PIPE = AutoPipelineForImage2Image.from_pretrained(
             model_id,
             torch_dtype=dtype,
             variant="fp16",
             low_cpu_mem_usage=True,
         )
 
-        pipe.scheduler = DEISMultistepScheduler.from_config(pipe.scheduler.config)
-        pipe.safety_checker = None
-        pipe.enable_xformers_memory_efficient_attention()
-        pipe.enable_attention_slicing()
+        PIPE.scheduler = DEISMultistepScheduler.from_config(PIPE.scheduler.config)
+        PIPE.safety_checker = None
+        PIPE.enable_xformers_memory_efficient_attention()
+        PIPE.enable_attention_slicing()
 
-        pipe = pipe.to(device)
-        logging.info(f"Pipeline erfolgreich geladen auf Gerät: {next(pipe.unet.parameters()).device}")
-        return pipe
+        PIPE = PIPE.to(device)
+        logging.info(f"Pipeline erfolgreich geladen auf Gerät: {next(PIPE.unet.parameters()).device}")
     except Exception as e:
         logging.error(f"Fehler beim Laden der Pipeline: {e}")
         sys.exit(1)
@@ -80,7 +82,7 @@ def load_pipeline(model_id: str):
 def run_warmup(image: Image.Image, guidance_scale):
     try:
         logging.info("Führe Warmup-Durchlauf durch...")
-        _ = pipe(
+        _ = PIPE(
             prompt="simple warmup",
             image=[image],
             num_inference_steps=5,
@@ -114,7 +116,7 @@ def run_image2image_pipeline(
     generator = torch.Generator(device=device).manual_seed(seed)
 
     logging.info("Starte Bildgenerierung...")
-    output = pipe(
+    output = PIPE(
         prompt=prompt,
         negative_prompt=negative_prompt,
         image=[init_image],
@@ -197,7 +199,6 @@ def generate():
     print("Setting up environment...")
     setup_logging()
     clean_memory()
-    device, dtype = check_cuda()
     print(f"Environment setup done. Device: {device}, Dtype: {dtype}")
 
     # Bild laden
