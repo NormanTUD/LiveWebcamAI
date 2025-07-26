@@ -36,12 +36,12 @@ def clean_memory() -> None:
     torch.cuda.ipc_collect()
 
 @beartype
-def check_cuda() -> None:
+def check_cuda() -> str:
     if not torch.cuda.is_available():
         logging.error("CUDA ist nicht verfügbar – überprüfe deine PyTorch/GPU-Installation!")
-        sys.exit(1)
+        return "cpu"
     logging.info(f"CUDA verfügbar: {torch.cuda.get_device_name(0)}")
-    return "cuda", torch.float16
+    return "cuda"
 
 @beartype
 def load_image(path: str, size=(512, 512)) -> Image.Image:
@@ -234,6 +234,7 @@ def generate():
     # Antwort senden (hier: Dateiname und Pfad im tmp, anpassen je nach Usecase)
     return Response(base64.b64encode(open(output_path, "rb").read()).decode(), mimetype="text/plain")
 
+dtype = torch.float16
 device, dtype = check_cuda()
 args = parse_args()
 
