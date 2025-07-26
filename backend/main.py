@@ -1,3 +1,4 @@
+from typing import Optional
 import base64
 import os
 import tempfile
@@ -95,7 +96,7 @@ def run_image2image_pipeline(
     num_inference_steps: int,
     guidance_scale: float,
     strength: float = 0.3,
-    init_image: Image.Image = None,  # default None
+    init_image: Optional[Image.Image] = None,  # default None
     model_id: str = "lykon/dreamshaper-8",
     seed: int = 33,
     device: str = "cuda",
@@ -152,7 +153,6 @@ def parse_args():
 def main() -> None:
     setup_logging()
     clean_memory()
-    device, dtype = check_cuda()
 
     args = parse_args()
     init_image = load_image(args.input)
@@ -239,6 +239,8 @@ def generate():
 
     # Antwort senden (hier: Dateiname und Pfad im tmp, anpassen je nach Usecase)
     return Response(base64.b64encode(open(output_path, "rb").read()).decode(), mimetype="text/plain")
+
+device, dtype = check_cuda()
 
 if __name__ == "__main__":
     print("Parsing parameters")
