@@ -235,14 +235,13 @@ def generate():
     return Response(base64.b64encode(open(output_path, "rb").read()).decode(), mimetype="text/plain")
 
 dtype = torch.float16
-device, dtype = check_cuda()
+device = check_cuda()
 args = parse_args()
 
 if __name__ == "__main__":
     print("Parsing parameters")
 
     print("Checking Cuda")
-    device, dtype = check_cuda()
 
     print("Loading Pipeline")
     load_pipeline(args.model)
