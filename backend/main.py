@@ -16,6 +16,9 @@ from PIL import Image
 import torch
 from diffusers import AutoPipelineForImage2Image, DEISMultistepScheduler
 from flask import Flask
+
+last_generated_image = None
+
 app = Flask(__name__)
 
 pipe = None
@@ -94,12 +97,22 @@ def run_image2image_pipeline(
     num_inference_steps: int,
     guidance_scale: float,
     strength: float,
-    init_image: Image.Image,
+    init_image: Image.Image = None,  # default None
     model_id: str = "lykon/dreamshaper-8",
     seed: int = 33,
     device: str = "cuda",
     dtype=torch.float16,
 ) -> Image.Image:
+    global last_generated_image
+
+    # Wenn kein init_image übergeben wurde, verwende das letzte
+    if init_image is None:
+        if last_generated_image is None:
+            logging.error("Kein Startbild übergeben und auch kein vorheriges Bild vorhanden.")
+            return None
+        logging.info("Verwende vorheriges generiertes Bild als init_image.")
+        init_image = last_generated_image
+
     run_warmup(pipe, init_image)
 
     generator = torch.Generator(device=device).manual_seed(seed)
@@ -116,11 +129,12 @@ def run_image2image_pipeline(
     )
 
     if output and output.images and len(output.images) > 0:
-        return output.images[0]
+        result = output.images[0]
+        last_generated_image = result  # Merke dieses Bild für den nächsten Durchlauf
+        return result
     else:
         logging.error("Kein Bild wurde generiert!")
         return None
-
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Image2Image mit Diffusers (dreamshaper-8)")
