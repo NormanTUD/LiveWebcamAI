@@ -29,12 +29,10 @@ MAX_UPLOAD_SIZE = 50 * 1024 * 1024
 def setup_logging():
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
-
 def clean_memory():
     gc.collect()
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
-
 
 def check_cuda():
     if not torch.cuda.is_available():
@@ -42,7 +40,6 @@ def check_cuda():
         exit(1)
     logging.info(f"CUDA verfügbar: {torch.cuda.get_device_name(0)}")
     return "cuda", torch.float16
-
 
 def load_image(path: str, size=(512, 512)) -> Image.Image:
     if not os.path.exists(path):
@@ -53,7 +50,6 @@ def load_image(path: str, size=(512, 512)) -> Image.Image:
     except Exception as e:
         logging.error(f"Fehler beim Laden oder Verarbeiten des Bildes: {e}")
         exit(1)
-
 
 def load_pipeline(model_id: str, device: str, dtype=torch.float16):
     global pipe
@@ -77,7 +73,6 @@ def load_pipeline(model_id: str, device: str, dtype=torch.float16):
         logging.error(f"Fehler beim Laden der Pipeline: {e}")
         exit(1)
 
-
 def run_warmup(pipe, image: Image.Image):
     try:
         logging.info("Führe Warmup-Durchlauf durch...")
@@ -89,7 +84,6 @@ def run_warmup(pipe, image: Image.Image):
         )
     except Exception as e:
         logging.warning(f"Warmup fehlgeschlagen (wird ignoriert): {e}")
-
 
 def run_image2image_pipeline(
     prompt: str,
@@ -148,7 +142,6 @@ def parse_args():
     parser.add_argument("--model", default="lykon/dreamshaper-8", help="HuggingFace Modell-ID")
     parser.add_argument("--server", action="store_true", default=False, help="Starte den FastAPI-Server (default: False)")
     return parser.parse_args()
-
 
 def main():
     setup_logging()
@@ -239,7 +232,6 @@ def generate():
 
     # Antwort senden (hier: Dateiname und Pfad im tmp, anpassen je nach Usecase)
     return Response(base64.b64encode(open(output_path, "rb").read()).decode(), mimetype="text/plain")
-
 
 # Datei als Antwort (direkt anzeigen im Browser)
     print(f"Returning file response: {output_path}")
