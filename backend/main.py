@@ -97,7 +97,6 @@ def run_image2image_pipeline(
     guidance_scale: float,
     strength: float = 0.3,
     init_image: Optional[Image.Image] = None,  # default None
-    model_id: str = "lykon/dreamshaper-8",
     seed: int = 33,
     device: str = "cuda",
     dtype=torch.float16,
@@ -220,7 +219,6 @@ def generate():
         num_inference_steps=int(request.form.get("steps", 25)),
         guidance_scale=float(request.form.get("scale", 7.5)),
         init_image=init_image,
-        model_id=request.form.get("model", "lykon/dreamshaper-8"),
         seed=int(request.form.get("seed", 33)),
         device=device,
         dtype=dtype,
