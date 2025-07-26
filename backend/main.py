@@ -65,6 +65,8 @@ def load_pipeline(model_id: str, device: str, dtype=torch.float16):
 
         pipe.scheduler = DEISMultistepScheduler.from_config(pipe.scheduler.config)
         pipe.safety_checker = None
+        pipe.enable_xformers_memory_efficient_attention()
+        pipe.enable_attention_slicing()
 
         pipe = pipe.to(device)
         logging.info(f"Pipeline erfolgreich geladen auf Gerät: {next(pipe.unet.parameters()).device}")
@@ -73,14 +75,14 @@ def load_pipeline(model_id: str, device: str, dtype=torch.float16):
         logging.error(f"Fehler beim Laden der Pipeline: {e}")
         exit(1)
 
-def run_warmup(pipe, image: Image.Image):
+def run_warmup(pipe, image: Image.Image, guidance_scale):
     try:
         logging.info("Führe Warmup-Durchlauf durch...")
         _ = pipe(
             prompt="simple warmup",
             image=[image],
             num_inference_steps=5,
-            guidance_scale=5.0,
+            guidance_scale=guidance_scale # .0,
         )
     except Exception as e:
         logging.warning(f"Warmup fehlgeschlagen (wird ignoriert): {e}")
@@ -107,7 +109,7 @@ def run_image2image_pipeline(
         logging.info("Verwende vorheriges generiertes Bild als init_image.")
         init_image = last_generated_image
 
-    run_warmup(pipe, init_image)
+    run_warmup(pipe, init_image, guidance_scale)
 
     generator = torch.Generator(device=device).manual_seed(seed)
 
