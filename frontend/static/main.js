@@ -106,7 +106,6 @@ async function sendImage() {
 	form.append("input", blob, "frame.png");
 	form.append("prompt", promptInput.value || "");
 	form.append("negative_prompt", document.getElementById('negative_prompt').value || "");
-	form.append("model", document.getElementById('model_select').value);
 	form.append("steps", document.getElementById('num_inference_steps').value);
 	form.append("scale", document.getElementById('guidance_scale').value);
 	form.append("model", document.getElementById('model_select').value);
