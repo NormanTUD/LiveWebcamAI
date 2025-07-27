@@ -18,11 +18,13 @@ fi
 
 source "$VENV_DIR/bin/activate"
 
-pip install --upgrade pip
 
-INSTALLED_PACKAGES=$(pip freeze | sed -e 's#=.*##' | tr '[:upper:]' '[:lower:]')
 
 install_missing_packages() {
+	INSTALLED_PACKAGES=$(pip freeze | sed -e 's#=.*##' | tr '[:upper:]' '[:lower:]')
+
+	pip install --upgrade pip
+
         local changed=0
         while IFS= read -r line || [ -n "$line" ]; do
                 original_line=$line
