@@ -5,6 +5,7 @@ const video = document.getElementById('webcam');
 const promptInput = document.getElementById('prompt');
 const latencyDisplay = document.getElementById('latency');
 const errorBox = document.getElementById('error');
+const nr_gpus = 4;
 
 let oldImageData = null;
 let delay = 1000;
@@ -202,7 +203,7 @@ function sleep(ms) {
 async function loop() {
 	while (1) {
 		sendImage();
-		await sleep(Math.max(200, get_avg_latency()));
+		await sleep(Math.max(200, get_avg_latency() / nr_gpus));
 	}
 }
 
