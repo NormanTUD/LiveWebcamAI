@@ -63,14 +63,6 @@ def count_available_gpus() -> int:
         return 0
 
 @beartype
-def check_cuda() -> str:
-    if not torch.cuda.is_available():
-        logging.error("CUDA ist nicht verfügbar – überprüfe deine PyTorch/GPU-Installation!")
-        return "cpu"
-    console.print(f"CUDA verfügbar: {torch.cuda.get_device_name(0)}")
-    return "cuda"
-
-@beartype
 def load_image(path: str, size=(512, 512)) -> Image.Image:
     if not os.path.exists(path):
         logging.error(f"Bilddatei '{path}' nicht gefunden!")
@@ -122,7 +114,7 @@ def load_pipeline(model_id: str) -> None:
             pipe["function"].enable_xformers_memory_efficient_attention()
             pipe["function"].enable_attention_slicing()
 
-            pipe["function"] = pipe["function"].to(device)
+            pipe["function"] = pipe["function"].to(f"cuda:{i}")
             CURRENT_MODEL_ID = model_id
             LAST_GENERATED_IMAGE = None
 
@@ -225,7 +217,7 @@ def run_image2image_pipeline(
 
     # Schritt 3: Generator vorbereiten
     start = time.perf_counter()
-    generator = torch.Generator(device=device).manual_seed(seed)
+    generator = torch.Generator(device=f"cuda:{pipe_nr}").manual_seed(seed)
     end = time.perf_counter()
     timings["Seed setzen"] = end - start
 
@@ -460,7 +452,6 @@ def generate():
 
 setup_logging()
 dtype = torch.float16
-device = check_cuda()
 args = parse_args()
 
 if __name__ == "__main__":
