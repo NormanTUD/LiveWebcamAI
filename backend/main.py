@@ -195,21 +195,6 @@ def main() -> None:
     if result:
         result.save(args.output)
         logging.info(f"Fertig! Ergebnis gespeichert als {args.output}")
-import os
-import uuid
-import base64
-import shutil
-import tempfile
-from flask import Flask, request, Response, abort
-from beartype import beartype
-
-app = Flask(__name__)
-
-MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50MB
-
-# Dummy device/dtype for example, bitte anpassen
-device = "cuda"
-dtype = "torch.float16"
 
 def setup_logging():
     # Hier eigenes Logging einrichten
