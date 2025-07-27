@@ -37,6 +37,7 @@ from beartype import beartype
 console = Console()
 
 LAST_GENERATED_IMAGE = None
+CURRENT_MODEL_ID = None
 
 app = Flask(__name__)
 
@@ -75,14 +76,18 @@ def load_image(path: str, size=(512, 512)) -> Image.Image:
 
 @beartype
 def load_pipeline(model_id: str):
-    global PIPE
+    global PIPE, CURRENT_MODEL_ID
+
+    if model_id == CURRENT_MODEL_ID and PIPE is not None:
+        logging.info(f"Modell '{model_id}' ist bereits geladen. Verwende bestehende Pipeline.")
+        return PIPE
 
     try:
-        logging.info("Lade Pipeline...")
+        logging.info(f"Lade Pipeline für Modell '{model_id}'...")
         PIPE = AutoPipelineForImage2Image.from_pretrained(
             model_id,
             torch_dtype=dtype,
-            #variant="fp16",
+            # variant="fp16",
             low_cpu_mem_usage=True,
         )
 
@@ -92,7 +97,11 @@ def load_pipeline(model_id: str):
         PIPE.enable_attention_slicing()
 
         PIPE = PIPE.to(device)
+        CURRENT_MODEL_ID = model_id
         logging.info(f"Pipeline erfolgreich geladen auf Gerät: {next(PIPE.unet.parameters()).device}")
+
+        return PIPE
+
     except Exception as e:
         logging.error(f"Fehler beim Laden der Pipeline: {e}")
         sys.exit(1)
@@ -327,8 +336,11 @@ def generate():
         "guidance_scale": float(request.form.get("scale", 7.5)),
         "init_image": init_image,
         "seed": int(request.form.get("seed", 33)),
-        "strength": float(request.form.get("strength", 0.4))
+        "strength": float(request.form.get("strength", 0.4)),
+        "model": request.form.get("model", "dreamlike-art/dreamlike-photoreal-2.0")
     }
+
+    load_pipeline(params["model"])
 
     print("Original parameters:")
     for k, v in params.items():
