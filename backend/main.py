@@ -39,7 +39,6 @@ from beartype import beartype
 console = Console()
 
 CURRENTLY_LOADING_PIPELINE = False
-LAST_GENERATED_IMAGE = None
 CURRENT_MODEL_ID = None
 
 app = Flask(__name__)
@@ -153,7 +152,6 @@ def load_pipeline(model_id: str) -> None:
                 console.print(table)
 
             CURRENT_MODEL_ID = model_id
-            LAST_GENERATED_IMAGE = None
 
             insert_or_replace(i, pipe)
 
@@ -189,12 +187,6 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int):
     except Exception as e:
         logging.warning(f"Warmup fehlgeschlagen (wird ignoriert): {e}")
 
-def merge_image_with_previous_one_if_available(img1):
-    if LAST_GENERATED_IMAGE:
-        return crossfade_images(img1, LAST_GENERATED_IMAGE, 0.1)
-
-    return img1
-
 @beartype
 def get_pipe_nr():
     while True:
@@ -224,8 +216,6 @@ def run_image2image_pipeline(
     clamped_values: Optional[dict] = None,
     model: str = "dreamlike-art/dreamlike-photoreal-2.0"
 ) -> Optional[Image.Image]:
-    global LAST_GENERATED_IMAGE
-
     start_total = time.perf_counter()
     console.rule("[bold green]Start: run_image2image_pipeline")
 
@@ -234,11 +224,8 @@ def run_image2image_pipeline(
     # Schritt 1: Initialbild bestimmen
     start = time.perf_counter()
     if init_image is None:
-        if LAST_GENERATED_IMAGE is None:
-            console.print("[bold red]❌ Kein Startbild übergeben und auch kein vorheriges Bild vorhanden.")
-            return None
-        console.print("[yellow]ℹ️ Verwende vorheriges generiertes Bild als init_image.")
-        init_image = LAST_GENERATED_IMAGE
+        console.print("[bold red]❌ Kein Startbild übergeben.")
+        return None
     if init_image.mode != "RGB":
         console.print("[yellow]⚠️ Konvertiere init_image zu RGB")
         init_image = init_image.convert("RGB")
@@ -269,7 +256,7 @@ def run_image2image_pipeline(
     output = PIPES[pipe_nr]["function"](
         prompt=prompt,
         negative_prompt=negative_prompt,
-        image=[merge_image_with_previous_one_if_available(init_image)],
+        image=[init_image],
         generator=generator,
         num_inference_steps=num_inference_steps,
         previous_frames=PREVIOUS_FRAMES,
@@ -288,7 +275,6 @@ def run_image2image_pipeline(
         result = output.images[0]
 
         PREVIOUS_FRAMES.append(result)
-        LAST_GENERATED_IMAGE = result
 
         end = time.perf_counter()
         timings["Ergebnis speichern"] = end - start
@@ -334,9 +320,6 @@ def parse_args():
     parser.add_argument("--model", default="prompthero/openjourney", help="HuggingFace Modell-ID")
     parser.add_argument("--server", action="store_true", default=False, help="Starte den FastAPI-Server (default: False)")
     return parser.parse_args()
-
-def crossfade_images(img1, img2, alpha):
-    return Image.blend(img1, img2, alpha)
 
 @beartype
 def main() -> None:
