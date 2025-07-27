@@ -123,7 +123,7 @@ def load_pipeline(model_id: str) -> None:
             CURRENT_MODEL_ID = model_id
             LAST_GENERATED_IMAGE = None
 
-            console.print(f"Pipeline erfolgreich geladen auf Gerät: {next(pipe.unet.parameters()).device} für GPU Nr. {i + 1}/{nr_gpus}")
+            console.print(f"Pipeline erfolgreich geladen auf GPU Nr. {i + 1}/{nr_gpus}")
 
             insert_or_replace(i, pipe)
 
