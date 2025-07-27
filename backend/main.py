@@ -84,18 +84,25 @@ def load_pipeline(model_id: str):
         logging.error(f"Fehler beim Laden der Pipeline: {e}")
         sys.exit(1)
 
+WARMUP_DONE = False
+
 @beartype
 def run_warmup(image: Image.Image, guidance_scale):
+    global WARMUP_DONE
+    if WARMUP_DONE:
+        return
     try:
         logging.info("Führe Warmup-Durchlauf durch...")
         _ = PIPE(
             prompt="simple warmup",
             image=[image],
             num_inference_steps=2,
-            guidance_scale=guidance_scale  # .0,
+            guidance_scale=guidance_scale
         )
+        WARMUP_DONE = True
     except Exception as e:
         logging.warning(f"Warmup fehlgeschlagen (wird ignoriert): {e}")
+
 
 
 @beartype
