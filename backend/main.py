@@ -1,3 +1,10 @@
+# Tested models:
+# Work:
+# - lykon/dreamshaper-8
+# - runwayml/stable-diffusion-v1-5
+# Don't work:
+# - stabilityai/stable-diffusion-2-inpainting
+
 import sys
 import base64
 import os
