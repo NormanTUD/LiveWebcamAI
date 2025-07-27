@@ -19,8 +19,6 @@ from beartype import beartype
 
 LAST_GENERATED_IMAGE = None
 
-WARMUP_DONE = False
-
 app = Flask(__name__)
 
 PIPE = None
@@ -82,18 +80,14 @@ def load_pipeline(model_id: str):
 
 @beartype
 def run_warmup(image: Image.Image, guidance_scale):
-    global WARMUP_DONE
-    if WARMUP_DONE:
-        return
     try:
         logging.info("Führe Warmup-Durchlauf durch...")
         _ = PIPE(
             prompt="simple warmup",
             image=[image],
             num_inference_steps=5,
-            guidance_scale=guidance_scale
+            guidance_scale=guidance_scale  # .0,
         )
-        WARMUP_DONE = True
     except Exception as e:
         logging.warning(f"Warmup fehlgeschlagen (wird ignoriert): {e}")
 
