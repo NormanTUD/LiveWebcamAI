@@ -45,6 +45,7 @@ CURRENT_MODEL_ID = None
 app = Flask(__name__)
 
 PIPES = []
+PREVIOUS_FRAMES = []
 
 # Max 50 MB Upload limit (50 * 1024 * 1024 bytes)
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024
@@ -180,6 +181,7 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int):
         _ = PIPES[pipe_nr]["function"](
             prompt="simple warmup",
             image=[image],
+            ip_adapter_image=PREVIOUS_FRAMES,
             num_inference_steps=2,
             guidance_scale=guidance_scale
         )
@@ -270,6 +272,7 @@ def run_image2image_pipeline(
         image=[merge_image_with_previous_one_if_available(init_image)],
         generator=generator,
         num_inference_steps=num_inference_steps,
+        previous_frames=PREVIOUS_FRAMES,
         guidance_scale=guidance_scale,
         strength=strength
     )
@@ -283,7 +286,10 @@ def run_image2image_pipeline(
     start = time.perf_counter()
     if output and output.images and len(output.images) > 0:
         result = output.images[0]
+
+        PREVIOUS_FRAMES.append(result)
         LAST_GENERATED_IMAGE = result
+
         end = time.perf_counter()
         timings["Ergebnis speichern"] = end - start
         total_time = time.perf_counter() - start_total
