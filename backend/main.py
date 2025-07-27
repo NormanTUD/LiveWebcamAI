@@ -130,7 +130,7 @@ def run_warmup(image: Image.Image, guidance_scale):
 
 def merge_image_with_previous_one_if_available(img1):
     if LAST_GENERATED_IMAGE:
-        return crossfade_images(img1, LAST_GENERATED_IMAGE, 0.8)
+        return crossfade_images(img1, LAST_GENERATED_IMAGE, 0.1)
 
     return img1
 
