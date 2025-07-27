@@ -321,7 +321,7 @@ def generate():
 
     pipeline_time = pipeline_start_end - pipeline_start_time
 
-    print("Pipeline finished, took {pipeline_time}s.")
+    print(f"Pipeline finished, took {pipeline_time}s.")
 
     if not result:
         print("Image generation failed, cleaning up.")
