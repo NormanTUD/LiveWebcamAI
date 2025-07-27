@@ -83,7 +83,10 @@ def load_pipeline(model_id: str):
         return PIPE
 
     try:
+        logging.info("-> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> ->")
         logging.info(f"Lade Pipeline für Modell '{model_id}'...")
+        logging.info("-> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> ->")
+
         PIPE = AutoPipelineForImage2Image.from_pretrained(
             model_id,
             torch_dtype=dtype,
