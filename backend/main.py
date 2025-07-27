@@ -83,6 +83,8 @@ def insert_or_replace(index, pipe):
 
 @beartype
 def load_pipeline(model_id: str) -> None:
+    global CURRENTLY_LOADING_PIPELINE
+
     while CURRENTLY_LOADING_PIPELINE:
         time.sleep(200)
 
