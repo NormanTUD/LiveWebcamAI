@@ -134,7 +134,8 @@ def run_image2image_pipeline(
     strength: float = 0.3,
     init_image: Optional[Image.Image] = None,
     seed: int = 33,
-    clamped_values: Optional[dict] = None
+    clamped_values: Optional[dict] = None,
+    model: str = "dreamlike-art/dreamlike-photoreal-2.0"
 ) -> Optional[Image.Image]:
     global LAST_GENERATED_IMAGE
 
