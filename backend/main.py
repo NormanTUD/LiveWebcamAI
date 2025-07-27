@@ -10,12 +10,18 @@ import logging
 import time
 
 from typing import Optional
+from rich.console import Console
+from rich.table import Table
+from rich import box
+from rich.style import Style
 
 from PIL import Image
 import torch
 from diffusers import AutoPipelineForImage2Image, DEISMultistepScheduler
 from flask import Flask, request, abort, Response, send_file
 from beartype import beartype
+
+console = Console()
 
 LAST_GENERATED_IMAGE = None
 
@@ -91,6 +97,7 @@ def run_warmup(image: Image.Image, guidance_scale):
     except Exception as e:
         logging.warning(f"Warmup fehlgeschlagen (wird ignoriert): {e}")
 
+
 @beartype
 def run_image2image_pipeline(
     prompt: str,
@@ -99,49 +106,47 @@ def run_image2image_pipeline(
     guidance_scale: float,
     strength: float = 0.3,
     init_image: Optional[Image.Image] = None,
-    seed: int = 33
+    seed: int = 33,
+    clamped_values: Optional[dict] = None
 ) -> Optional[Image.Image]:
     global LAST_GENERATED_IMAGE
 
     start_total = time.perf_counter()
-    logging.info("🟢 Starte run_image2image_pipeline")
+    console.rule("[bold green]Start: run_image2image_pipeline")
+
+    timings = {}
 
     # Schritt 1: Initialbild bestimmen
     start = time.perf_counter()
-
-    if init_image.mode != "RGB":
-        logging.warning("Konvertiere init_image zu RGB")
-        init_image = init_image.convert("RGB")
-
-    # Optional: Größe prüfen
-    if init_image.size[0] < 64 or init_image.size[1] < 64:
-        logging.error("Init-Image ist zu klein!")
-
-
     if init_image is None:
         if LAST_GENERATED_IMAGE is None:
-            logging.error("❌ Kein Startbild übergeben und auch kein vorheriges Bild vorhanden.")
+            console.print("[bold red]❌ Kein Startbild übergeben und auch kein vorheriges Bild vorhanden.")
             return None
-        logging.info("ℹ️ Verwende vorheriges generiertes Bild als init_image.")
+        console.print("[yellow]ℹ️ Verwende vorheriges generiertes Bild als init_image.")
         init_image = LAST_GENERATED_IMAGE
+    if init_image.mode != "RGB":
+        console.print("[yellow]⚠️ Konvertiere init_image zu RGB")
+        init_image = init_image.convert("RGB")
+    if init_image.size[0] < 64 or init_image.size[1] < 64:
+        console.print("[bold red]❌ Init-Image ist zu klein!")
     end = time.perf_counter()
-    logging.info(f"✅ Schritt 1 (Init-Bild bestimmen) dauerte {end - start:.3f} Sekunden")
+    timings["Init-Bild bestimmen"] = end - start
 
     # Schritt 2: Warmup
     start = time.perf_counter()
     run_warmup(init_image, guidance_scale)
     end = time.perf_counter()
-    logging.info(f"✅ Schritt 2 (Warmup) dauerte {end - start:.3f} Sekunden")
+    timings["Warmup"] = end - start
 
     # Schritt 3: Generator vorbereiten
     start = time.perf_counter()
     generator = torch.Generator(device=device).manual_seed(seed)
     end = time.perf_counter()
-    logging.info(f"✅ Schritt 3 (Seed setzen) dauerte {end - start:.3f} Sekunden")
+    timings["Seed setzen"] = end - start
 
     # Schritt 4: Bildgenerierung
     start = time.perf_counter()
-    logging.info("🖼️ Starte Bildgenerierung mit Diffusion Pipeline...")
+    console.print("🖼️ Starte Bildgenerierung mit Diffusion Pipeline...")
     output = PIPE(
         prompt=prompt,
         negative_prompt=negative_prompt,
@@ -152,7 +157,7 @@ def run_image2image_pipeline(
         strength=strength
     )
     end = time.perf_counter()
-    logging.info(f"✅ Schritt 4 (Bildgenerierung) dauerte {end - start:.3f} Sekunden")
+    timings["Bildgenerierung"] = end - start
 
     # Schritt 5: Ergebnis prüfen und speichern
     start = time.perf_counter()
@@ -160,12 +165,34 @@ def run_image2image_pipeline(
         result = output.images[0]
         LAST_GENERATED_IMAGE = result
         end = time.perf_counter()
-        logging.info(f"✅ Schritt 5 (Ergebnis speichern) dauerte {end - start:.3f} Sekunden")
-        logging.info(f"🎉 Gesamtzeit: {time.perf_counter() - start_total:.3f} Sekunden")
+        timings["Ergebnis speichern"] = end - start
+        total_time = time.perf_counter() - start_total
+        timings["Gesamtzeit"] = total_time
+
+        console.rule("[bold cyan]⏱️ Zeiten der Schritte")
+        table = Table(title="Pipeline-Schritte", box=box.SIMPLE)
+        table.add_column("Schritt", style="bold")
+        table.add_column("Dauer (Sekunden)", justify="right")
+        for name, duration in timings.items():
+            table.add_row(name, f"{duration:.3f}")
+        console.print(table)
+
+        if clamped_values:
+            console.rule("[bold magenta]🔧 Clamped Parameter")
+            clamp_table = Table(title="Parameter Clamping", box=box.SIMPLE_HEAVY)
+            clamp_table.add_column("Parameter", style="bold")
+            clamp_table.add_column("Original", justify="right")
+            clamp_table.add_column("Clamped", justify="right")
+            for key, (original, clamped) in clamped_values.items():
+                highlight = Style(bgcolor="orange3") if original != clamped else None
+                clamp_table.add_row(str(key), str(original), str(clamped), style=highlight)
+            console.print(clamp_table)
+
+        console.print(f"[bold green]🎉 Bildgenerierung abgeschlossen in {total_time:.3f} Sekunden")
         return result
 
-    logging.error("❌ Kein Bild wurde generiert!")
-    logging.info(f"❌ Gesamtzeit bis Fehler: {time.perf_counter() - start_total:.3f} Sekunden")
+    console.print("[bold red]❌ Kein Bild wurde generiert!")
+    console.print(f"[red]❌ Gesamtzeit bis Fehler: {time.perf_counter() - start_total:.3f} Sekunden")
     return None
 
 @beartype
