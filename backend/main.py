@@ -235,7 +235,7 @@ def run_image2image_pipeline(
     # Schritt 4: Bildgenerierung
     start = time.perf_counter()
     console.print("🖼️ Starte Bildgenerierung mit Diffusion Pipeline...")
-    output = PIPES[i]["function"](
+    output = PIPES[pipe_nr]["function"](
         prompt=prompt,
         negative_prompt=negative_prompt,
         image=[merge_image_with_previous_one_if_available(init_image)],
