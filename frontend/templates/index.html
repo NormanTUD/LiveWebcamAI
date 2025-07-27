@@ -126,8 +126,7 @@
 
   <div class="right">
     <h1>🎨 Ergebnis</h1>
-    <video id="processedVideo" controls autoplay muted playsinline style="display:none;"></video>
-    <img id="processedImage" style="display:none; max-width:100%;" />
+    <img id="processedImage" style="display:none; width:512px; height: 512px;;" />
   </div>
 
 <script>
@@ -167,20 +166,23 @@ function setupMorphCanvas(width, height) {
   processedImage.style.display = "none";
 }
 
-// Simple linear morph zwischen zwei Bildern (Pixelweise)
-// Für echten Morphing müsste man Dreiecke nutzen, hier nur als Beispiel fade + displacement
 async function morphImages(oldImg, newImg, duration = 1000) {
   if (!oldImg) {
-    // Erstes Bild einfach direkt anzeigen
+    // Erstes Bild einfach direkt anzeigen, Canvas ausblenden
+    morphCanvas.style.display = 'none';
+    processedImage.style.display = 'block';
     processedImage.src = newImg.src;
     oldImageData = newImg;
     return;
   }
 
-  // morphCanvas mit Bildgröße anpassen
   if (morphCanvas.width !== newImg.width || morphCanvas.height !== newImg.height) {
     setupMorphCanvas(newImg.width, newImg.height);
   }
+
+  // Canvas anzeigen, Bild verstecken
+  morphCanvas.style.display = 'block';
+  processedImage.style.display = 'none';
 
   return new Promise(resolve => {
     let start = null;
@@ -199,7 +201,9 @@ async function morphImages(oldImg, newImg, duration = 1000) {
       if (progress < 1) {
         requestAnimationFrame(animate);
       } else {
-        // Ende: morphCanvas ausblenden, neues Bild anzeigen
+        // Am Ende: Canvas verstecken, Bild zeigen
+        morphCanvas.style.display = 'none';
+        processedImage.style.display = 'block';
         processedImage.src = newImg.src;
         morphCtx.clearRect(0, 0, morphCanvas.width, morphCanvas.height);
         oldImageData = newImg;
