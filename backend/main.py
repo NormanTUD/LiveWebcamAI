@@ -41,7 +41,7 @@ CURRENT_MODEL_ID = None
 
 app = Flask(__name__)
 
-PIPE = None
+PIPES = []
 
 # Max 50 MB Upload limit (50 * 1024 * 1024 bytes)
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024
@@ -56,11 +56,18 @@ def clean_memory() -> None:
     torch.cuda.ipc_collect()
 
 @beartype
+def count_available_gpus() -> int:
+    if torch.cuda.is_available():
+        return torch.cuda.device_count()
+    else:
+        return 0
+
+@beartype
 def check_cuda() -> str:
     if not torch.cuda.is_available():
         logging.error("CUDA ist nicht verfügbar – überprüfe deine PyTorch/GPU-Installation!")
         return "cpu"
-    logging.info(f"CUDA verfügbar: {torch.cuda.get_device_name(0)}")
+    console.print(f"CUDA verfügbar: {torch.cuda.get_device_name(0)}")
     return "cuda"
 
 @beartype
@@ -75,51 +82,55 @@ def load_image(path: str, size=(512, 512)) -> Image.Image:
         sys.exit(1)
 
 @beartype
-def load_pipeline(model_id: str):
-    global PIPE, CURRENT_MODEL_ID
+def load_pipeline(model_id: str) -> None:
+    global CURRENT_MODEL_ID
 
-    if model_id == CURRENT_MODEL_ID and PIPE is not None:
-        logging.info(f"Modell '{model_id}' ist bereits geladen. Verwende bestehende Pipeline.")
-        return PIPE
+    if model_id == CURRENT_MODEL_ID and len(PIPES) == count_available_gpus():
+        console.print(f"Modell '{model_id}' ist bereits geladen. Verwende bestehende Pipeline.")
+
+        return None
 
     try:
-        logging.info("-> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> ->")
-        logging.info(f"Lade Pipeline für Modell '{model_id}'...")
-        logging.info("-> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> ->")
+        for i in range(0, count_available_gpus()):
+            console.print("-> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> ->")
+            console.print(f"Lade Pipeline für Modell '{model_id}'...")
+            console.print("-> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> ->")
 
-        PIPE = AutoPipelineForImage2Image.from_pretrained(
-            model_id,
-            torch_dtype=dtype,
-            # variant="fp16",
-            low_cpu_mem_usage=True,
-        )
+            PIPES[i]["function"] = AutoPipelineForImage2Image.from_pretrained(
+                model_id,
+                torch_dtype=dtype,
+                # variant="fp16",
+                low_cpu_mem_usage=True,
+            )
 
-        PIPE.scheduler = DEISMultistepScheduler.from_config(PIPE.scheduler.config)
-        PIPE.safety_checker = None
-        PIPE.enable_xformers_memory_efficient_attention()
-        PIPE.enable_attention_slicing()
+            PIPES[i]["is_blocked"] = False
 
-        PIPE = PIPE.to(device)
-        CURRENT_MODEL_ID = model_id
-        LAST_GENERATED_IMAGE = None
-        logging.info(f"Pipeline erfolgreich geladen auf Gerät: {next(PIPE.unet.parameters()).device}")
+            PIPES[i]["function"].scheduler = DEISMultistepScheduler.from_config(PIPES[i]["function"].scheduler.config)
+            PIPES[i]["function"].safety_checker = None
+            PIPES[i]["function"].enable_xformers_memory_efficient_attention()
+            PIPES[i]["function"].enable_attention_slicing()
 
-        return PIPE
+            PIPES[i]["function"] = PIPES[i]["function"].to(device)
+            CURRENT_MODEL_ID = model_id
+            LAST_GENERATED_IMAGE = None
+            console.print(f"Pipeline erfolgreich geladen auf Gerät: {next(PIPE.unet.parameters()).device}")
 
     except Exception as e:
         logging.error(f"Fehler beim Laden der Pipeline: {e}")
         sys.exit(1)
 
+    return None
+
 WARMUP_DONE = False
 
 @beartype
-def run_warmup(image: Image.Image, guidance_scale):
+def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int):
     global WARMUP_DONE
     if WARMUP_DONE:
         return
     try:
-        logging.info("Führe Warmup-Durchlauf durch...")
-        _ = PIPE(
+        console.print("Führe Warmup-Durchlauf durch...")
+        _ = PIPES[pipe_nr]["function"](
             prompt="simple warmup",
             image=[image],
             num_inference_steps=2,
@@ -134,6 +145,23 @@ def merge_image_with_previous_one_if_available(img1):
         return crossfade_images(img1, LAST_GENERATED_IMAGE, 0.1)
 
     return img1
+
+@beartype
+def get_pipe_nr():
+    while True:
+        for i in range(0, len()):
+            if not PIPES[i]["is_blocked"]:
+                return i
+
+        time.sleep(0.01)
+
+@beartype
+def block_pipe(pipe_nr) -> None:
+    PIPES[pipe_nr]["is_blocked"] = True
+
+@beartype
+def release_pipe(pipe_nr) -> None:
+    PIPES[pipe_nr]["is_blocked"] = False
 
 @beartype
 def run_image2image_pipeline(
@@ -170,9 +198,13 @@ def run_image2image_pipeline(
     end = time.perf_counter()
     timings["Init-Bild bestimmen"] = end - start
 
+    pipe_nr = get_pipe_nr()
+
+    block_pipe(pipe_nr)
+
     # Schritt 2: Warmup
     start = time.perf_counter()
-    run_warmup(init_image, guidance_scale)
+    run_warmup(init_image, guidance_scale, pipe_nr)
     end = time.perf_counter()
     timings["Warmup"] = end - start
 
@@ -185,7 +217,7 @@ def run_image2image_pipeline(
     # Schritt 4: Bildgenerierung
     start = time.perf_counter()
     console.print("🖼️ Starte Bildgenerierung mit Diffusion Pipeline...")
-    output = PIPE(
+    output = PIPES[i]["function"](
         prompt=prompt,
         negative_prompt=negative_prompt,
         image=[merge_image_with_previous_one_if_available(init_image)],
@@ -194,6 +226,9 @@ def run_image2image_pipeline(
         guidance_scale=guidance_scale,
         strength=strength
     )
+
+    release_pipe(pipe_nr)
+
     end = time.perf_counter()
     timings["Bildgenerierung"] = end - start
 
@@ -270,7 +305,7 @@ def main() -> None:
 
     if result:
         result.save(args.output)
-        logging.info(f"Fertig! Ergebnis gespeichert als {args.output}")
+        console.print(f"Fertig! Ergebnis gespeichert als {args.output}")
 
 def clamp_params(params):
     # num_inference_steps: typischer Bereich 1-50, clamp auf 5-50 z.B.
