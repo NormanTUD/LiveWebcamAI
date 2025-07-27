@@ -98,6 +98,8 @@ def load_pipeline(model_id: str) -> None:
             console.print(f"Lade Pipeline für Modell '{model_id}' für GPU Nr. {i + 1}/{nr_gpus}...")
             console.print("-> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> ->")
 
+            PIPES[i] = {}
+
             PIPES[i]["function"] = AutoPipelineForImage2Image.from_pretrained(
                 model_id,
                 torch_dtype=dtype,
