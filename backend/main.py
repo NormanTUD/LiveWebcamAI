@@ -184,7 +184,6 @@ def parse_args():
 
 @beartype
 def main() -> None:
-    setup_logging()
     clean_memory()
 
     init_image = load_image(args.input)
@@ -261,11 +260,7 @@ def generate():
         f.write(contents)
     print(f"Input file saved: {input_path}")
 
-    # Setup Umgebung
-    print("Setting up environment...")
-    setup_logging()
     clean_memory()
-    print(f"Environment setup done. Device: {device}, Dtype: {dtype}")
 
     # Bild laden
     print(f"Loading input image from {input_path}...")
@@ -301,6 +296,8 @@ def generate():
 
     print("Starting image2image pipeline...")
 
+    pipeline_start_time = time.time()
+
     try:
         result = run_image2image_pipeline(**params)
     except Exception as e:
@@ -320,7 +317,11 @@ def generate():
             shutil.rmtree(tmp_dir)
             abort(500, description="Image generation failed after fallback")
 
-    print("Pipeline finished.")
+    pipeline_start_end = time.time()
+
+    pipeline_time = pipeline_start_end - pipeline_start_time
+
+    print("Pipeline finished, took {pipeline_time}s.")
 
     if not result:
         print("Image generation failed, cleaning up.")
@@ -334,6 +335,7 @@ def generate():
     # Antwort senden (hier: Dateiname und Pfad im tmp, anpassen je nach Usecase)
     return send_file(output_path, mimetype="image/png")
 
+setup_logging()
 dtype = torch.float16
 device = check_cuda()
 args = parse_args()
