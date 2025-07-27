@@ -124,6 +124,28 @@ def load_pipeline(model_id: str) -> None:
             pipe["function"].enable_attention_slicing()
 
             pipe["function"] = pipe["function"].to(f"cuda:{i}")
+
+            if i == 0:
+                sig = inspect.signature(func)
+
+                console = Console()
+                table = Table(title=f"Parameters of `{func.__name__}`")
+
+                table.add_column("Name", style="bold")
+                table.add_column("Default", style="dim")
+                table.add_column("Annotation", style="cyan")
+
+                for name, param in sig.parameters.items():
+                    default = (
+                        "–" if param.default is inspect.Parameter.empty else repr(param.default)
+                    )
+                    annotation = (
+                        "–" if param.annotation is inspect.Parameter.empty else repr(param.annotation)
+                    )
+                    table.add_row(name, default, annotation)
+
+                console.print(table)
+
             CURRENT_MODEL_ID = model_id
             LAST_GENERATED_IMAGE = None
 
