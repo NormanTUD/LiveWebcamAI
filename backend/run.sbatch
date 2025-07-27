@@ -41,6 +41,6 @@ install_missing_packages() {
         fi
 }
 
-install_missing_packages
+#install_missing_packages
 
 python3 main.py --server $*
