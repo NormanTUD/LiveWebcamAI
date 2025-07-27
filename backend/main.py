@@ -196,6 +196,39 @@ def main() -> None:
         result.save(args.output)
         logging.info(f"Fertig! Ergebnis gespeichert als {args.output}")
 
+def clamp_params(params):
+    # num_inference_steps: typischer Bereich 1-50, clamp auf 5-50 z.B.
+    steps = params.get("num_inference_steps", 25)
+    if steps < 5:
+        steps = 5
+    elif steps > 50:
+        steps = 50
+    params["num_inference_steps"] = steps
+
+    # guidance_scale: üblicher Bereich ca. 1-20, clamp 1-20
+    scale = params.get("guidance_scale", 7.5)
+    if scale < 1:
+        scale = 1.0
+    elif scale > 20:
+        scale = 20.0
+    params["guidance_scale"] = scale
+
+    # strength: meist 0..1, aber 1.0 kann problematisch sein, setze max 0.99
+    strength = params.get("strength", 0.4)
+    if strength <= 0:
+        strength = 0.01
+    elif strength >= 1.0:
+        strength = 0.99
+    params["strength"] = strength
+
+    # seed >=0
+    seed = params.get("seed", 33)
+    if seed < 0:
+        seed = 0
+    params["seed"] = seed
+
+    return params
+
 @beartype
 @app.route("/generate", methods=["POST"])
 def generate():
@@ -235,6 +268,7 @@ def generate():
     print(f"Output filename generated: {output_filename}")
 
     # Pipeline ausführen
+
     params = {
         "prompt": request.form.get("prompt", ""),
         "negative_prompt": request.form.get("negative_prompt", ""),
@@ -245,12 +279,38 @@ def generate():
         "strength": float(request.form.get("strength", 0.4))
     }
 
-    print("Parameters for image2image pipeline:")
+    print("Original parameters:")
+    for k, v in params.items():
+        print(f"  {k}: {v}")
+
+    # Clamp params vor Pipeline-Call
+    params = clamp_params(params)
+
+    print("Clamped parameters:")
     for k, v in params.items():
         print(f"  {k}: {v}")
 
     print("Starting image2image pipeline...")
-    result = run_image2image_pipeline(**params)
+
+    try:
+        result = run_image2image_pipeline(**params)
+    except Exception as e:
+        print(f"Pipeline error: {e}")
+        # Fallback: versuche mit Standard-Params
+        print("Retrying with fallback parameters...")
+        fallback_params = {
+            **params,
+            "num_inference_steps": 25,
+            "strength": 0.4,
+            "guidance_scale": 7.5,
+        }
+        try:
+            result = run_image2image_pipeline(**fallback_params)
+        except Exception as e2:
+            print(f"Fallback also failed: {e2}")
+            shutil.rmtree(tmp_dir)
+            abort(500, description="Image generation failed after fallback")
+
     print("Pipeline finished.")
 
     if not result:
