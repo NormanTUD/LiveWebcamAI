@@ -5,6 +5,7 @@
 # Don't work:
 # - stabilityai/stable-diffusion-2-inpainting
 # - kandinsky-community/kandinsky-2-2
+# - civitai/anything-v4.5
 
 import sys
 import base64
@@ -77,7 +78,7 @@ def load_pipeline(model_id: str):
         PIPE = AutoPipelineForImage2Image.from_pretrained(
             model_id,
             torch_dtype=dtype,
-            variant="fp16",
+            #variant="fp16",
             low_cpu_mem_usage=True,
         )
 
