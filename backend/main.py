@@ -45,7 +45,7 @@ CURRENT_MODEL_ID = None
 app = Flask(__name__)
 
 PIPES = []
-PREVIOUS_FRAMES = deque(maxlen=10)
+PREVIOUS_FRAMES = deque(maxlen=30)
 
 # Max 50 MB Upload limit (50 * 1024 * 1024 bytes)
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024
