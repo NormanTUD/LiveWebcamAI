@@ -104,6 +104,10 @@ def load_pipeline(model_id: str) -> None:
 
     try:
         for i in range(0, nr_gpus):
+            if i in PIPES:
+                if PIPES[i]["name"] = model_id:
+                    continue
+
             console.print("-> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> ->")
             console.print(f"Lade Pipeline für Modell '{model_id}' für GPU Nr. {i + 1}/{nr_gpus}...")
             console.print("-> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> ->")
@@ -153,6 +157,8 @@ def load_pipeline(model_id: str) -> None:
             insert_or_replace(i, pipe)
 
             console.print(f"Pipeline erfolgreich geladen auf GPU Nr. {i + 1}/{nr_gpus}")
+
+            PIPES[i]["name"] = model_id
 
     except Exception as e:
         CURRENTLY_LOADING_PIPELINE = False
