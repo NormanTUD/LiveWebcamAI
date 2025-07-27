@@ -22,6 +22,7 @@ import argparse
 import logging
 import time
 import inspect
+from collections import deque
 
 from typing import Optional
 
@@ -44,7 +45,7 @@ CURRENT_MODEL_ID = None
 app = Flask(__name__)
 
 PIPES = []
-PREVIOUS_FRAMES = []
+PREVIOUS_FRAMES = deque(maxlen=10)
 
 # Max 50 MB Upload limit (50 * 1024 * 1024 bytes)
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024
@@ -301,6 +302,7 @@ def run_image2image_pipeline(
             console.print(clamp_table)
 
         console.print(f"[bold green]🎉 Bildgenerierung abgeschlossen in {total_time:.3f} Sekunden")
+
         return result
 
     console.print("[bold red]❌ Kein Bild wurde generiert!")
