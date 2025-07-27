@@ -5,92 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🎥 Diffusion Control Panel</title>
   <link rel="icon" href="static/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="static/style.css">
   <meta name="description" content="Sende Live-Bilder deiner Webcam an Stable Diffusion zur Bildgenerierung.">
   <style>
-    :root {
-      --bg: #f4f4f8;
-      --fg: #222;
-      --input-bg: #fff;
-      --input-border: #ccc;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #1e1e1e;
-        --fg: #eee;
-        --input-bg: #2a2a2a;
-        --input-border: #555;
-      }
-    }
-
-    body {
-      margin: 0;
-      font-family: system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--fg);
-      display: flex;
-      flex-direction: row;
-      height: 100vh;
-    }
-
-    .left, .right {
-      flex: 1;
-      padding: 2rem;
-      overflow-y: auto;
-    }
-
-    h1 {
-      margin-top: 0;
-      font-size: 1.5rem;
-    }
-
-    video, img {
-      width: 100%;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 0.6rem;
-      margin: 0.5rem 0 1rem 0;
-      background: var(--input-bg);
-      border: 1px solid var(--input-border);
-      border-radius: 6px;
-      font-size: 1rem;
-      color: var(--fg);
-    }
-
-    .slider-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .slider-group label {
-      display: block;
-      margin-bottom: 0.3rem;
-      font-weight: bold;
-    }
-
-    .slider-group span {
-      font-weight: normal;
-      float: right;
-    }
-
-    input[type="range"] {
-      width: 100%;
-    }
-
-    .info {
-      margin-top: 1rem;
-      font-style: italic;
-      color: #666;
-    }
-
-    .error {
-      color: red;
-      margin-top: 1rem;
-      font-weight: bold;
-    }
   </style>
 </head>
 <body>
