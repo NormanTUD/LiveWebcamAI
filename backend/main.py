@@ -33,10 +33,6 @@ def setup_logging() -> None:
 @beartype
 def clean_memory() -> None:
     gc.collect()
-    try:
-        torch.cuda.empty_cache()
-    except RuntimeError as e:
-        logging.error(f"Fehler bei CUDA Cache-Leerung: {e}")
     torch.cuda.ipc_collect()
 
 @beartype
