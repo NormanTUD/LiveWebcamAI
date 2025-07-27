@@ -168,11 +168,11 @@ function setupMorphCanvas(width, height) {
 
 async function morphImages(oldImg, newImg, duration = 300) {
   if (!oldImg) {
-    // Erstes Bild einfach direkt anzeigen, Canvas ausblenden
     morphCanvas.style.display = 'none';
     processedImage.style.display = 'block';
     processedImage.src = newImg.src;
-    oldImageData = newImg;
+    oldImageData = new Image();
+    oldImageData.src = newImg.src; // neues Image-Objekt
     return;
   }
 
@@ -180,7 +180,6 @@ async function morphImages(oldImg, newImg, duration = 300) {
     setupMorphCanvas(512, 512);
   }
 
-  // Canvas anzeigen, Bild verstecken
   morphCanvas.style.display = 'block';
   processedImage.style.display = 'none';
 
@@ -201,17 +200,35 @@ async function morphImages(oldImg, newImg, duration = 300) {
       if (progress < 1) {
         requestAnimationFrame(animate);
       } else {
-        // Am Ende: Canvas verstecken, Bild zeigen
-        morphCanvas.style.display = 'none';
-        processedImage.style.display = 'block';
-        processedImage.src = newImg.src;
-        morphCtx.clearRect(0, 0, morphCanvas.width, morphCanvas.height);
-        oldImageData = newImg;
-        resolve();
+        // Warten bis neues Bild geladen ist, bevor sichtbar
+        const newProcessedImg = new Image();
+        newProcessedImg.onload = () => {
+          morphCanvas.style.display = 'none';
+          processedImage.style.display = 'block';
+          processedImage.src = newProcessedImg.src;
+          morphCtx.clearRect(0, 0, morphCanvas.width, morphCanvas.height);
+          oldImageData = newProcessedImg;
+          resolve();
+        };
+        newProcessedImg.src = newImg.src;
       }
     }
     requestAnimationFrame(animate);
   });
+}
+
+var avg_latency = [];
+
+function get_avg_latency () {
+  if(avg_latency.length == 0) {
+    return 1000;
+  }
+
+  let sum = 0;
+  for(let i = 0; i < avg_latency.length; i++) {
+    sum += avg_latency[i];
+  }
+  return sum / avg_latency.length;
 }
 
 // neu: sendImage nutzt morphImages
@@ -239,8 +256,9 @@ async function sendImage() {
 
     const newImg = new Image();
     newImg.onload = async () => {
-      await morphImages(oldImageData, newImg, 1000); // morph über 1 Sekunde
+      await morphImages(oldImageData, newImg, 0.9 * Math.floor(get_avg_latency())); // morph über 1 Sekunde
       const latency = (performance.now() - start) / 1000;
+      avg_latency.push(latency)
       latencyDisplay.textContent = `Verarbeitung: ${latency.toFixed(2)} Sekunden`;
       errorBox.style.display = "none";
     };
