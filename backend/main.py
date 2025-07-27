@@ -105,7 +105,7 @@ def load_pipeline(model_id: str) -> None:
     try:
         for i in range(0, nr_gpus):
             if i in PIPES:
-                if PIPES[i]["name"] = model_id:
+                if PIPES[i]["name"] == model_id:
                     continue
 
             console.print("-> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> ->")
