@@ -128,9 +128,9 @@ def load_pipeline(model_id: str) -> None:
             pipe["function"] = pipe["function"].to(f"cuda:{i}")
 
             if i == 0:
-                sig = inspect.signature(func)
+                sig = inspect.signature(pipe["function"])
 
-                table = Table(title=f"Parameters of `{func.__name__}`")
+                table = Table(title="Parameters of the AutoPipelineForImage2Image")
 
                 table.add_column("Name", style="bold")
                 table.add_column("Default", style="dim")
