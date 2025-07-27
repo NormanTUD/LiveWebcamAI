@@ -141,12 +141,6 @@ function showError(msg) {
 	errorBox.style.display = "block";
 }
 
-async function loop() {
-	while (1) {
-		await sendImage();
-	}
-}
-
 function showSpinner(text = "Bitte warten...") {
 	// Container erstellen
 	const container = document.createElement("div");
@@ -201,5 +195,15 @@ function hideSpinner() {
 	if (container) container.remove();
 }
 
+function sleep(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function loop() {
+	while (1) {
+		sendImage();
+		await sleep(200);
+	}
+}
 
 startWebcam().then(loop);

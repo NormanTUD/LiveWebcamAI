@@ -36,6 +36,7 @@ from beartype import beartype
 
 console = Console()
 
+CURRENTLY_LOADING_PIPELINE = False
 LAST_GENERATED_IMAGE = None
 CURRENT_MODEL_ID = None
 
@@ -82,11 +83,17 @@ def insert_or_replace(index, pipe):
 
 @beartype
 def load_pipeline(model_id: str) -> None:
+    while CURRENTLY_LOADING_PIPELINE:
+        time.sleep(200)
+
+    CURRENTLY_LOADING_PIPELINE = True
+
     global CURRENT_MODEL_ID
 
     if model_id == CURRENT_MODEL_ID and len(PIPES) == count_available_gpus():
         console.print(f"Modell '{model_id}' ist bereits geladen. Verwende bestehende Pipeline.")
 
+        CURRENTLY_LOADING_PIPELINE = False
         return None
 
     nr_gpus = count_available_gpus()
@@ -123,9 +130,11 @@ def load_pipeline(model_id: str) -> None:
             console.print(f"Pipeline erfolgreich geladen auf GPU Nr. {i + 1}/{nr_gpus}")
 
     except Exception as e:
+        CURRENTLY_LOADING_PIPELINE = False
         logging.error(f"Fehler beim Laden der Pipeline: {e}")
         sys.exit(1)
 
+    CURRENTLY_LOADING_PIPELINE = False
     return None
 
 WARMUP_DONE = False
