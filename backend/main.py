@@ -317,7 +317,7 @@ def generate():
 
     # Pipeline ausführen
 
-    prompt = f"{request.form.get("prompt", "")}, ultra detailed, 8k, realistic lighting, sharp focus"
+    prompt = request.form.get("prompt", "") + ", ultra detailed, 8k, realistic lighting, sharp focus"
 
     params = {
         "prompt": prompt,
