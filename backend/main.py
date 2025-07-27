@@ -21,8 +21,10 @@ import gc
 import argparse
 import logging
 import time
+import inspect
 
 from typing import Optional
+
 from rich.console import Console
 from rich.table import Table
 from rich import box
