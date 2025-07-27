@@ -196,138 +196,74 @@ def main() -> None:
         result.save(args.output)
         logging.info(f"Fertig! Ergebnis gespeichert als {args.output}")
 
-def setup_logging():
-    # Hier eigenes Logging einrichten
-    pass
-
-def clean_memory():
-    # GPU Speicher etc. freigeben
-    pass
-
-def load_image(path):
-    from PIL import Image
-    return Image.open(path).convert("RGB")
-
-def run_image2image_pipeline(
-    prompt,
-    negative_prompt,
-    num_inference_steps,
-    guidance_scale,
-    init_image,
-    seed,
-    strength
-):
-    # Hier die eigentliche Pipeline aufrufen
-    # Muss exceptions werfen oder None zurückgeben, wenn Fehler
-    # Beispiel Dummy-Implementierung:
-    try:
-        # --- Pipeline Code ---
-        # z.B. output = PIPE(...)
-        # return output_image
-        pass
-    except Exception as e:
-        print(f"Pipeline error: {e}")
-        return None
-
 @beartype
 @app.route("/generate", methods=["POST"])
 def generate():
-    tmp_dir = None
-    try:
-        input_file = request.files.get("input")
-        if not input_file:
-            return "No input file uploaded", 400
+    # Datei auslesen
+    input_file = request.files.get("input")
+    if not input_file:
+        return "No input file uploaded", 400
 
-        contents = input_file.read()
-        print(f"Upload received: {input_file.filename}, size: {len(contents)} bytes")
+    contents = input_file.read()
+    print(f"Upload received: {input_file.filename}, size: {len(contents)} bytes")
 
-        if len(contents) > MAX_UPLOAD_SIZE:
-            print(f"Upload rejected: Datei zu groß ({len(contents)} Bytes > {MAX_UPLOAD_SIZE})")
-            abort(413, description="File too large (>50MB)")
+    if len(contents) > MAX_UPLOAD_SIZE:
+        print(f"Upload rejected: Datei zu groß ({len(contents)} Bytes > {MAX_UPLOAD_SIZE})")
+        abort(413, description="File too large (>50MB)")
 
-        tmp_dir = tempfile.mkdtemp()
-        print(f"Temporary directory created: {tmp_dir}")
+    tmp_dir = tempfile.mkdtemp()
+    print(f"Temporary directory created: {tmp_dir}")
 
-        safe_filename = os.path.basename(input_file.filename)
-        if not safe_filename:
-            safe_filename = "input_image"
+    input_path = os.path.join(tmp_dir, input_file.filename)
+    with open(input_path, "wb") as f:
+        f.write(contents)
+    print(f"Input file saved: {input_path}")
 
-        input_path = os.path.join(tmp_dir, safe_filename)
-        with open(input_path, "wb") as f:
-            f.write(contents)
-        print(f"Input file saved: {input_path}")
+    # Setup Umgebung
+    print("Setting up environment...")
+    setup_logging()
+    clean_memory()
+    print(f"Environment setup done. Device: {device}, Dtype: {dtype}")
 
-        print("Setting up environment...")
-        setup_logging()
-        clean_memory()
-        print(f"Environment setup done. Device: {device}, Dtype: {dtype}")
+    # Bild laden
+    print(f"Loading input image from {input_path}...")
+    init_image = load_image(input_path)
+    print("Image loaded successfully.")
 
-        print(f"Loading input image from {input_path}...")
-        init_image = load_image(input_path)
-        print("Image loaded successfully.")
+    output_filename = f"{uuid.uuid4().hex}.png"
+    output_path = os.path.join(tmp_dir, output_filename)
+    print(f"Output filename generated: {output_filename}")
 
-        output_filename = f"{uuid.uuid4().hex}.png"
-        output_path = os.path.join(tmp_dir, output_filename)
-        print(f"Output filename generated: {output_filename}")
+    # Pipeline ausführen
+    params = {
+        "prompt": request.form.get("prompt", ""),
+        "negative_prompt": request.form.get("negative_prompt", ""),
+        "num_inference_steps": int(request.form.get("steps", 25)),
+        "guidance_scale": float(request.form.get("scale", 7.5)),
+        "init_image": init_image,
+        "seed": int(request.form.get("seed", 33)),
+        "strength": float(request.form.get("strength", 0.4))
+    }
 
-        # Parameter aus Formular holen & validieren
-        def parse_int(name, default):
-            try:
-                return int(request.form.get(name, default))
-            except Exception as e:
-                print(f"Invalid int for {name}: {e}, fallback to {default}")
-                return default
+    print("Parameters for image2image pipeline:")
+    for k, v in params.items():
+        print(f"  {k}: {v}")
 
-        def parse_float(name, default):
-            try:
-                return float(request.form.get(name, default))
-            except Exception as e:
-                print(f"Invalid float for {name}: {e}, fallback to {default}")
-                return default
+    print("Starting image2image pipeline...")
+    result = run_image2image_pipeline(**params)
+    print("Pipeline finished.")
 
-        params = {
-            "prompt": request.form.get("prompt", "").strip(),
-            "negative_prompt": request.form.get("negative_prompt", "").strip(),
-            "num_inference_steps": parse_int("steps", 25),
-            "guidance_scale": parse_float("scale", 7.5),
-            "init_image": init_image,
-            "seed": parse_int("seed", 33),
-            "strength": parse_float("strength", 0.4)
-        }
-
-        print("Parameters for image2image pipeline:")
-        for k, v in params.items():
-            if k != "init_image":
-                print(f"  {k}: {v}")
-            else:
-                print(f"  {k}: <PIL.Image.Image object>")
-
-        print("Starting image2image pipeline...")
-        result = run_image2image_pipeline(**params)
-        print("Pipeline finished.")
-
-        if result is None:
-            print("Image generation failed, cleaning up.")
-            abort(500, description="Image generation failed")
-
-        result.save(output_path)
-        print(f"Result saved at {output_path}")
-
-        with open(output_path, "rb") as f:
-            encoded = base64.b64encode(f.read()).decode()
-
-        # Cleanup temporäres Verzeichnis nach erfolgreichem Versand
+    if not result:
+        print("Image generation failed, cleaning up.")
         shutil.rmtree(tmp_dir)
-        tmp_dir = None
+        abort(500, description="Image generation failed")
 
-        return Response(encoded, mimetype="text/plain")
+    # Ergebnis speichern
+    result.save(output_path)
+    print(f"Result saved at {output_path}")
 
-    except Exception as e:
-        print(f"Exception in /generate: {e}")
-        # Bei Exception temp_dir löschen, falls existiert
-        if tmp_dir and os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)
-        abort(500, description=f"Internal Server Error: {e}")
+    # Antwort senden (hier: Dateiname und Pfad im tmp, anpassen je nach Usecase)
+    return Response(base64.b64encode(open(output_path, "rb").read()).decode(), mimetype="text/plain")
 
 dtype = torch.float16
 device = check_cuda()
