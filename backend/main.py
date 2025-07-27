@@ -85,7 +85,7 @@ def run_warmup(image: Image.Image, guidance_scale):
         _ = PIPE(
             prompt="simple warmup",
             image=[image],
-            num_inference_steps=5,
+            num_inference_steps=2,
             guidance_scale=guidance_scale  # .0,
         )
     except Exception as e:
