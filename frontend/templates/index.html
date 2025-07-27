@@ -193,69 +193,57 @@ function setupMorphCanvas(width, height) {
   processedImage.parentNode.insertBefore(morphCanvas, processedImage);
   processedImage.style.display = "none";
 }
-async function morphImages(oldImg, newImg, duration = 300) {
-  if (!oldImg) {
-    morphCanvas.style.display = 'none';
-    processedImage.style.display = 'block';
-    processedImage.src = newImg.src;
-    oldImageData = new Image();
-    oldImageData.src = newImg.src;
-    return;
+
+  async function morphImages(oldImg, newImg, duration = 300) {
+	  if (!oldImg) {
+		  morphCanvas.style.display = 'none';
+		  processedImage.style.display = 'block';
+		  processedImage.src = newImg.src;
+		  oldImageData = new Image();
+		  oldImageData.src = newImg.src; // neues Image-Objekt
+		  return;
+	  }
+
+	  if (morphCanvas.width !== newImg.width || morphCanvas.height !== newImg.height) {
+		  setupMorphCanvas(512, 512);
+	  }
+
+	  morphCanvas.style.display = 'block';
+	  processedImage.style.display = 'none';
+
+	  return new Promise(resolve => {
+		  let start = null;
+
+		  function animate(timestamp) {
+			  if (!start) start = timestamp;
+			  let progress = (timestamp - start) / duration;
+			  if (progress > 1) progress = 1;
+
+			  morphCtx.clearRect(0, 0, morphCanvas.width, morphCanvas.height);
+			  morphCtx.globalAlpha = 1;
+			  morphCtx.drawImage(oldImg, 0, 0);
+			  morphCtx.globalAlpha = progress;
+			  morphCtx.drawImage(newImg, 0, 0);
+
+			  if (progress < 1) {
+				  requestAnimationFrame(animate);
+			  } else {
+				  // Warten bis neues Bild geladen ist, bevor sichtbar
+				  const newProcessedImg = new Image();
+				  newProcessedImg.onload = () => {
+					  morphCanvas.style.display = 'none';
+					  processedImage.style.display = 'block';
+					  processedImage.src = newProcessedImg.src;
+					  morphCtx.clearRect(0, 0, morphCanvas.width, morphCanvas.height);
+					  oldImageData = newProcessedImg;
+					  resolve();
+				  };
+				  newProcessedImg.src = newImg.src;
+			  }
+		  }
+		  requestAnimationFrame(animate);
+	  });
   }
-
-  if (morphCanvas.width !== newImg.width || morphCanvas.height !== newImg.height) {
-    setupMorphCanvas(newImg.width, newImg.height);
-  }
-
-  morphCanvas.style.display = 'block';
-  processedImage.style.display = 'none';
-
-  const oldCtx = document.createElement('canvas').getContext('2d');
-  oldCtx.canvas.width = oldImg.width;
-  oldCtx.canvas.height = oldImg.height;
-  oldCtx.drawImage(oldImg, 0, 0);
-
-  const newCtx = document.createElement('canvas').getContext('2d');
-  newCtx.canvas.width = newImg.width;
-  newCtx.canvas.height = newImg.height;
-  newCtx.drawImage(newImg, 0, 0);
-
-  const oldPixels = oldCtx.getImageData(0, 0, oldImg.width, oldImg.height);
-  const newPixels = newCtx.getImageData(0, 0, newImg.width, newImg.height);
-
-  const morphPixels = morphCtx.createImageData(morphCanvas.width, morphCanvas.height);
-
-  return new Promise(resolve => {
-    let start = null;
-
-    function animate(timestamp) {
-      if (!start) start = timestamp;
-      let progress = (timestamp - start) / duration;
-      if (progress > 1) progress = 1;
-
-      for (let i = 0; i < oldPixels.data.length; i += 4) {
-        morphPixels.data[i] = oldPixels.data[i] * (1 - progress) + newPixels.data[i] * progress;       // R
-        morphPixels.data[i + 1] = oldPixels.data[i + 1] * (1 - progress) + newPixels.data[i + 1] * progress; // G
-        morphPixels.data[i + 2] = oldPixels.data[i + 2] * (1 - progress) + newPixels.data[i + 2] * progress; // B
-        morphPixels.data[i + 3] = 255; // voll sichtbar
-      }
-
-      morphCtx.putImageData(morphPixels, 0, 0);
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        morphCanvas.style.display = 'none';
-        processedImage.style.display = 'block';
-        processedImage.src = newImg.src;
-        oldImageData = newImg;
-        resolve();
-      }
-    }
-    requestAnimationFrame(animate);
-  });
-}
-
 
 var avg_latency = [];
 
