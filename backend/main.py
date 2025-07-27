@@ -103,8 +103,6 @@ def run_warmup(image: Image.Image, guidance_scale):
     except Exception as e:
         logging.warning(f"Warmup fehlgeschlagen (wird ignoriert): {e}")
 
-
-
 @beartype
 def run_image2image_pipeline(
     prompt: str,
