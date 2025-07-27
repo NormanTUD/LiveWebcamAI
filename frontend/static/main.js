@@ -200,18 +200,39 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+let runningJobs = 0;
 let lastJobId = 0;
+let lastHandledJobId = 0;
 
-async function loop() {
-    while (true) {
-        const jobId = ++lastJobId;
-        const start = performance.now();
-        sendImage(jobId);
-        const latency = get_avg_latency(); // oder berechne dynamisch
-        const idealInterval = Math.max(200, latency / nr_gpus);
-        const elapsed = performance.now() - start;
-        const waitTime = Math.max(0, idealInterval - elapsed);
-        await sleep(waitTime);
+async function startJob() {
+    if (runningJobs >= nr_gpus) return; // keine freien Slots
+
+    runningJobs++;
+    const thisJobId = ++lastJobId;
+    const startTime = Date.now();
+
+    try {
+        const result = await sendImage(thisJobId);  // sendImage ist async
+        const duration = Date.now() - startTime;
+
+        // Nur neuere oder gleich aktuelle Ergebnisse übernehmen
+        if (thisJobId >= lastHandledJobId) {
+            lastHandledJobId = thisJobId;
+            handleResult(result);
+        }
+    } catch (e) {
+        console.error('Job failed', e);
+    } finally {
+        runningJobs--;
+        // Sobald ein Slot frei ist, sofort nächsten Job starten
+        startJob();
+    }
+}
+
+function loop() {
+    // Starte initial so viele Jobs, wie Slots frei sind
+    for (let i = 0; i < nr_gpus; i++) {
+        startJob();
     }
 }
 
