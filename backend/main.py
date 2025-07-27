@@ -83,7 +83,10 @@ def load_image(path: str, size=(512, 512)) -> Image.Image:
 
 def insert_or_replace(index, pipe):
     global PIPES
-    PIPES[index:index+1] = [pipe] if index < len(PIPES) else PIPES.append(pipe)
+    if index < len(PIPES):
+        PIPES[index] = pipe
+    else:
+        PIPES.append(pipe)
 
 @beartype
 def load_pipeline(model_id: str) -> None:
@@ -123,9 +126,9 @@ def load_pipeline(model_id: str) -> None:
             CURRENT_MODEL_ID = model_id
             LAST_GENERATED_IMAGE = None
 
-            console.print(f"Pipeline erfolgreich geladen auf GPU Nr. {i + 1}/{nr_gpus}")
-
             insert_or_replace(i, pipe)
+
+            console.print(f"Pipeline erfolgreich geladen auf GPU Nr. {i + 1}/{nr_gpus}")
 
     except Exception as e:
         logging.error(f"Fehler beim Laden der Pipeline: {e}")
