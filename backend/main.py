@@ -294,7 +294,7 @@ def parse_args():
     parser.add_argument("--steps", type=int, default=25, help="Anzahl Inferenz-Schritte")
     parser.add_argument("--scale", type=float, default=7.5, help="Guidance-Scale")
     parser.add_argument("--seed", type=int, default=33, help="Zufalls-Seed")
-    parser.add_argument("--model", default="stabilityai/stable-diffusion-2-1-base", help="HuggingFace Modell-ID")
+    parser.add_argument("--model", default="prompthero/openjourney", help="HuggingFace Modell-ID")
     parser.add_argument("--server", action="store_true", default=False, help="Starte den FastAPI-Server (default: False)")
     return parser.parse_args()
 
