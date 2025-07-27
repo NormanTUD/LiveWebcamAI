@@ -4,6 +4,7 @@
 # - runwayml/stable-diffusion-v1-5
 # - dreamlike-art/dreamlike-photoreal-2.0
 # - gsdf/Counterfeit-V2.5
+# - dreamlike-art/dreamlike-photoreal-2.0
 # Don't work:
 # - stabilityai/stable-diffusion-2-inpainting
 # - kandinsky-community/kandinsky-2-2
