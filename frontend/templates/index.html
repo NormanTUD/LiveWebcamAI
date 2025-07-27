@@ -289,8 +289,9 @@ async function sendImage() {
   }
 
   async function loop() {
-    sendImage();
-    setTimeout(loop, delay);
+	  while (1) {
+		  await sendImage();
+	  }
   }
 
   startWebcam().then(loop);
