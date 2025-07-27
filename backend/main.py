@@ -101,6 +101,7 @@ def load_pipeline(model_id: str):
 
         PIPE = PIPE.to(device)
         CURRENT_MODEL_ID = model_id
+        LAST_GENERATED_IMAGE = None
         logging.info(f"Pipeline erfolgreich geladen auf Gerät: {next(PIPE.unet.parameters()).device}")
 
         return PIPE
