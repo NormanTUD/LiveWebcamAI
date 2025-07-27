@@ -128,6 +128,12 @@ def run_warmup(image: Image.Image, guidance_scale):
     except Exception as e:
         logging.warning(f"Warmup fehlgeschlagen (wird ignoriert): {e}")
 
+def merge_image_with_previous_one_if_available(img1):
+    if LAST_GENERATED_IMAGE:
+        return crossfade_images(img1, LAST_GENERATED_IMAGE)
+
+    return img1
+
 @beartype
 def run_image2image_pipeline(
     prompt: str,
@@ -181,7 +187,7 @@ def run_image2image_pipeline(
     output = PIPE(
         prompt=prompt,
         negative_prompt=negative_prompt,
-        image=[init_image],
+        image=[merge_image_with_previous_one_if_available(init_image)],
         generator=generator,
         num_inference_steps=num_inference_steps,
         guidance_scale=guidance_scale,
@@ -239,6 +245,9 @@ def parse_args():
     parser.add_argument("--model", default="stabilityai/stable-diffusion-2-1-base", help="HuggingFace Modell-ID")
     parser.add_argument("--server", action="store_true", default=False, help="Starte den FastAPI-Server (default: False)")
     return parser.parse_args()
+
+def crossfade_images(img1, img2, alpha):
+    return Image.blend(img1, img2, alpha)
 
 @beartype
 def main() -> None:
