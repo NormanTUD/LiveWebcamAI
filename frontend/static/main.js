@@ -256,7 +256,7 @@ async function loop() {
 		// 2) Mindestintervall seit letztem Start vergangen ist
 		if (runningJobs < nr_gpus && sinceLastStart >= targetInterval) {
 			lastStartTime = now;
-			const started = await startJob();
+			const started = startJob();
 
 			// Nach Jobstart direkt neu TargetInterval berechnen
 			const avgDur = getAvgDuration();
