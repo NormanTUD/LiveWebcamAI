@@ -7,6 +7,7 @@ import shutil
 import gc
 import argparse
 import logging
+import time
 
 from typing import Optional
 
@@ -98,24 +99,40 @@ def run_image2image_pipeline(
     num_inference_steps: int,
     guidance_scale: float,
     strength: float = 0.3,
-    init_image: Optional[Image.Image] = None,  # default None
+    init_image: Optional[Image.Image] = None,
     seed: int = 33
-) -> Image.Image:
-    global LAST_GENERATED_IMAGE 
+) -> Optional[Image.Image]:
+    global LAST_GENERATED_IMAGE
 
-    # Wenn kein init_image übergeben wurde, verwende das letzte
+    start_total = time.perf_counter()
+    logging.info("🟢 Starte run_image2image_pipeline")
+
+    # Schritt 1: Initialbild bestimmen
+    start = time.perf_counter()
     if init_image is None:
         if LAST_GENERATED_IMAGE is None:
-            logging.error("Kein Startbild übergeben und auch kein vorheriges Bild vorhanden.")
+            logging.error("❌ Kein Startbild übergeben und auch kein vorheriges Bild vorhanden.")
             return None
-        logging.info("Verwende vorheriges generiertes Bild als init_image.")
+        logging.info("ℹ️ Verwende vorheriges generiertes Bild als init_image.")
         init_image = LAST_GENERATED_IMAGE
+    end = time.perf_counter()
+    logging.info(f"✅ Schritt 1 (Init-Bild bestimmen) dauerte {end - start:.3f} Sekunden")
 
+    # Schritt 2: Warmup
+    start = time.perf_counter()
     run_warmup(init_image, guidance_scale)
+    end = time.perf_counter()
+    logging.info(f"✅ Schritt 2 (Warmup) dauerte {end - start:.3f} Sekunden")
 
+    # Schritt 3: Generator vorbereiten
+    start = time.perf_counter()
     generator = torch.Generator(device=device).manual_seed(seed)
+    end = time.perf_counter()
+    logging.info(f"✅ Schritt 3 (Seed setzen) dauerte {end - start:.3f} Sekunden")
 
-    logging.info("Starte Bildgenerierung...")
+    # Schritt 4: Bildgenerierung
+    start = time.perf_counter()
+    logging.info("🖼️ Starte Bildgenerierung mit Diffusion Pipeline...")
     output = PIPE(
         prompt=prompt,
         negative_prompt=negative_prompt,
@@ -125,13 +142,21 @@ def run_image2image_pipeline(
         guidance_scale=guidance_scale,
         strength=strength
     )
+    end = time.perf_counter()
+    logging.info(f"✅ Schritt 4 (Bildgenerierung) dauerte {end - start:.3f} Sekunden")
 
+    # Schritt 5: Ergebnis prüfen und speichern
+    start = time.perf_counter()
     if output and output.images and len(output.images) > 0:
         result = output.images[0]
-        LAST_GENERATED_IMAGE = result  # Merke dieses Bild für den nächsten Durchlauf
+        LAST_GENERATED_IMAGE = result
+        end = time.perf_counter()
+        logging.info(f"✅ Schritt 5 (Ergebnis speichern) dauerte {end - start:.3f} Sekunden")
+        logging.info(f"🎉 Gesamtzeit: {time.perf_counter() - start_total:.3f} Sekunden")
         return result
 
-    logging.error("Kein Bild wurde generiert!")
+    logging.error("❌ Kein Bild wurde generiert!")
+    logging.info(f"❌ Gesamtzeit bis Fehler: {time.perf_counter() - start_total:.3f} Sekunden")
     return None
 
 @beartype
