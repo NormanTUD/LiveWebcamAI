@@ -93,7 +93,7 @@ def load_pipeline(model_id: str) -> None:
     try:
         for i in range(0, count_available_gpus()):
             console.print("-> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> ->")
-            console.print(f"Lade Pipeline für Modell '{model_id}'...")
+            console.print(f"Lade Pipeline für Modell '{model_id}' für GPU Nr. {i}...")
             console.print("-> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> ->")
 
             PIPES[i]["function"] = AutoPipelineForImage2Image.from_pretrained(
@@ -113,7 +113,7 @@ def load_pipeline(model_id: str) -> None:
             PIPES[i]["function"] = PIPES[i]["function"].to(device)
             CURRENT_MODEL_ID = model_id
             LAST_GENERATED_IMAGE = None
-            console.print(f"Pipeline erfolgreich geladen auf Gerät: {next(PIPE.unet.parameters()).device}")
+            console.print(f"Pipeline erfolgreich geladen auf Gerät: {next(PIPE.unet.parameters()).device} für GPU Nr. {i}")
 
     except Exception as e:
         logging.error(f"Fehler beim Laden der Pipeline: {e}")
