@@ -200,11 +200,19 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+let lastJobId = 0;
+
 async function loop() {
-	while (1) {
-		sendImage();
-		await sleep(Math.min(100, Math.max(200, get_avg_latency() / nr_gpus)));
-	}
+    while (true) {
+        const jobId = ++lastJobId;
+        const start = performance.now();
+        sendImage(jobId);
+        const latency = get_avg_latency(); // oder berechne dynamisch
+        const idealInterval = Math.max(200, latency / nr_gpus);
+        const elapsed = performance.now() - start;
+        const waitTime = Math.max(0, idealInterval - elapsed);
+        await sleep(waitTime);
+    }
 }
 
 startWebcam().then(loop);
