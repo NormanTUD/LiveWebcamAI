@@ -81,6 +81,10 @@ def load_image(path: str, size=(512, 512)) -> Image.Image:
         logging.error(f"Fehler beim Laden oder Verarbeiten des Bildes: {e}")
         sys.exit(1)
 
+def insert_or_replace(index, pipe):
+    global PIPES
+    PIPES[index:index+1] = [pipe] if index < len(PIPES) else PIPES.append(pipe)
+
 @beartype
 def load_pipeline(model_id: str) -> None:
     global CURRENT_MODEL_ID
@@ -98,32 +102,30 @@ def load_pipeline(model_id: str) -> None:
             console.print(f"Lade Pipeline für Modell '{model_id}' für GPU Nr. {i + 1}/{nr_gpus}...")
             console.print("-> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> ->")
 
-            print("A");
-            PIPES[i] = {}
 
-            print("B");
-            PIPES[i]["function"] = AutoPipelineForImage2Image.from_pretrained(
+            pipe = {}
+
+            pipe["function"] = AutoPipelineForImage2Image.from_pretrained(
                 model_id,
                 torch_dtype=dtype,
                 # variant="fp16",
                 low_cpu_mem_usage=True,
             )
 
-            print("C");
-            PIPES[i]["is_blocked"] = False
+            pipe["is_blocked"] = False
 
-            print("D");
-            PIPES[i]["function"].scheduler = DEISMultistepScheduler.from_config(PIPES[i]["function"].scheduler.config)
-            PIPES[i]["function"].safety_checker = None
-            PIPES[i]["function"].enable_xformers_memory_efficient_attention()
-            PIPES[i]["function"].enable_attention_slicing()
+            pipe["function"].scheduler = DEISMultistepScheduler.from_config(pipe["function"].scheduler.config)
+            pipe["function"].safety_checker = None
+            pipe["function"].enable_xformers_memory_efficient_attention()
+            pipe["function"].enable_attention_slicing()
 
-            print("E");
-            PIPES[i]["function"] = PIPES[i]["function"].to(device)
+            pipe["function"] = pipe["function"].to(device)
             CURRENT_MODEL_ID = model_id
             LAST_GENERATED_IMAGE = None
+
             console.print(f"Pipeline erfolgreich geladen auf Gerät: {next(PIPE.unet.parameters()).device} für GPU Nr. {i + 1}/{nr_gpus}")
-            print("F");
+
+            insert_or_replace(i, pipe)
 
     except Exception as e:
         logging.error(f"Fehler beim Laden der Pipeline: {e}")
