@@ -5,7 +5,7 @@ const video = document.getElementById('webcam');
 const promptInput = document.getElementById('prompt');
 const latencyDisplay = document.getElementById('latency');
 const errorBox = document.getElementById('error');
-const nr_gpus = 4;
+const nr_gpus = 4; // TODO: Dynamisch bestimmen
 
 let oldImageData = null;
 let delay = 1000;
