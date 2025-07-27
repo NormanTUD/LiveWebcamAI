@@ -128,7 +128,6 @@ def load_pipeline(model_id: str) -> None:
             if i == 0:
                 sig = inspect.signature(func)
 
-                console = Console()
                 table = Table(title=f"Parameters of `{func.__name__}`")
 
                 table.add_column("Name", style="bold")
