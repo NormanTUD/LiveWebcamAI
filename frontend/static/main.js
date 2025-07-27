@@ -200,39 +200,77 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+
 let runningJobs = 0;
 let lastJobId = 0;
 let lastHandledJobId = 0;
 
+const jobDurations = [];
+const maxDurationsStored = 20;
+
+function updateAvgDuration(duration) {
+    jobDurations.push(duration);
+    if (jobDurations.length > maxDurationsStored) jobDurations.shift();
+}
+
+function getAvgDuration() {
+    if (jobDurations.length === 0) return 1000;
+    return jobDurations.reduce((a,b) => a+b, 0) / jobDurations.length;
+}
+
+let lastStartTime = 0;
+let targetInterval = 0; // ms zwischen Job-Starts, wird adaptiv angepasst
+
 async function startJob() {
-    if (runningJobs >= nr_gpus) return; // keine freien Slots
+    if (runningJobs >= nr_gpus) return false;
 
     runningJobs++;
     const thisJobId = ++lastJobId;
-    const startTime = Date.now();
+    const startTime = performance.now();
 
     try {
-        const result = await sendImage(thisJobId);  // sendImage ist async
-        const duration = Date.now() - startTime;
+        const result = await sendImage(thisJobId);
+        const duration = performance.now() - startTime;
 
-        // Nur neuere oder gleich aktuelle Ergebnisse übernehmen
+        updateAvgDuration(duration);
+
         if (thisJobId >= lastHandledJobId) {
             lastHandledJobId = thisJobId;
             handleResult(result);
         }
-    } catch (e) {
+    } catch(e) {
         console.error('Job failed', e);
     } finally {
         runningJobs--;
-        // Sobald ein Slot frei ist, sofort nächsten Job starten
-        startJob();
     }
+    return true;
 }
 
-function loop() {
-    // Starte initial so viele Jobs, wie Slots frei sind
-    for (let i = 0; i < nr_gpus; i++) {
-        startJob();
+async function loop() {
+    targetInterval = getAvgDuration() / nr_gpus;
+
+    while(true) {
+        const now = performance.now();
+        const sinceLastStart = now - lastStartTime;
+
+        // Job starten wenn:
+        // 1) Noch Slots frei sind
+        // 2) Mindestintervall seit letztem Start vergangen ist
+        if (runningJobs < nr_gpus && sinceLastStart >= targetInterval) {
+            lastStartTime = now;
+            const started = await startJob();
+
+            // Nach Jobstart direkt neu TargetInterval berechnen
+            const avgDur = getAvgDuration();
+            // Ziel: jobs starten mit Abstand avgDur/nr_gpus ± Toleranz
+            targetInterval = avgDur / nr_gpus;
+
+            // Optional: Interval auf vernünftige Grenzen begrenzen, z.B. 30ms - 1000ms
+            targetInterval = Math.min(Math.max(targetInterval, 30), 1000);
+        } else {
+            // Sonst kurz warten und dann nochmal prüfen
+            await sleep(10);
+        }
     }
 }
 
