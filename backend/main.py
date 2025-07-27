@@ -317,8 +317,10 @@ def generate():
 
     # Pipeline ausführen
 
+    prompt = f"{request.form.get("prompt", "")}, ultra detailed, 8k, realistic lighting, sharp focus"
+
     params = {
-        "prompt": request.form.get("prompt", ""),
+        "prompt": prompt,
         "negative_prompt": request.form.get("negative_prompt", ""),
         "num_inference_steps": int(request.form.get("steps", 25)),
         "guidance_scale": float(request.form.get("scale", 7.5)),
