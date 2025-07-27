@@ -202,7 +202,7 @@ function sleep(ms) {
 async function loop() {
 	while (1) {
 		sendImage();
-		await sleep(200);
+		await sleep(Math.max(200, get_avg_latency()));
 	}
 }
 

@@ -167,7 +167,7 @@ def merge_image_with_previous_one_if_available(img1):
 @beartype
 def get_pipe_nr():
     while True:
-        for i in range(0, len()):
+        for i in range(0, len(PIPES)):
             if not PIPES[i]["is_blocked"]:
                 return i
 
