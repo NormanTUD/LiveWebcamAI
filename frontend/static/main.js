@@ -148,5 +148,59 @@ async function loop() {
 	}
 }
 
-startWebcam().then(loop);
+function showSpinner(text = "Bitte warten...") {
+	// Container erstellen
+	const container = document.createElement("div");
+	container.id = "spinner-container";
+	container.style.cssText = `
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 9999;
+    font-family: sans-serif;
+    color: white;
+  `;
 
+	// Spinner erstellen (CSS-Kreis)
+	const spinner = document.createElement("div");
+	spinner.style.cssText = `
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #3498db;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+  `;
+
+	// Text
+	const label = document.createElement("div");
+	label.textContent = text;
+
+	// Alles zusammenfügen
+	container.appendChild(spinner);
+	container.appendChild(label);
+	document.body.appendChild(container);
+
+	// Animation einfügen
+	const style = document.createElement("style");
+	style.textContent = `
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  `;
+	document.head.appendChild(style);
+}
+
+function hideSpinner() {
+	const container = document.getElementById("spinner-container");
+	if (container) container.remove();
+}
+
+
+startWebcam().then(loop);
