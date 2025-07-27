@@ -4,6 +4,7 @@
 # - runwayml/stable-diffusion-v1-5
 # Don't work:
 # - stabilityai/stable-diffusion-2-inpainting
+# - kandinsky-community/kandinsky-2-2
 
 import sys
 import base64
