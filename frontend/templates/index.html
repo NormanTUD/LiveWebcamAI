@@ -153,47 +153,97 @@
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  }let oldImageData = null;
+const morphCanvas = document.createElement('canvas');
+const morphCtx = morphCanvas.getContext('2d');
+const processedImage = document.getElementById("processedImage");
+
+// Setup morphCanvas size gleich dem Bild
+function setupMorphCanvas(width, height) {
+  morphCanvas.width = width;
+  morphCanvas.height = height;
+  processedImage.parentNode.insertBefore(morphCanvas, processedImage);
+  processedImage.style.display = "none";
+}
+
+// Simple linear morph zwischen zwei Bildern (Pixelweise)
+// Für echten Morphing müsste man Dreiecke nutzen, hier nur als Beispiel fade + displacement
+async function morphImages(oldImg, newImg, duration = 1000) {
+  if (!oldImg) {
+    // Erstes Bild einfach direkt anzeigen
+    processedImage.src = newImg.src;
+    oldImageData = newImg;
+    return;
   }
 
-  async function sendImage() {
-    const blob = await getFrameBlob(video);
-    if (!blob) return showError("Konnte Bildblob nicht erstellen");
+  // morphCanvas mit Bildgröße anpassen
+  if (morphCanvas.width !== newImg.width || morphCanvas.height !== newImg.height) {
+    setupMorphCanvas(newImg.width, newImg.height);
+  }
 
-    const form = new FormData();
-    form.append("strength", document.getElementById('strength').value);
-    form.append("input", blob, "frame.png");
-    form.append("prompt", promptInput.value || "artistic style");
-    form.append("negative_prompt", document.getElementById('negative_prompt').value || "");
-    form.append("steps", document.getElementById('num_inference_steps').value);
-    form.append("scale", document.getElementById('guidance_scale').value);
-    form.append("seed", "33");
-    form.append("model", "lykon/dreamshaper-8");
+  return new Promise(resolve => {
+    let start = null;
 
-    const start = performance.now();
+    function animate(timestamp) {
+      if (!start) start = timestamp;
+      let progress = (timestamp - start) / duration;
+      if (progress > 1) progress = 1;
 
-    try {
-      const res = await fetch("/generate", { method: "POST", body: form });
-      if (!res.ok) throw new Error("Server antwortete mit Status " + res.status);
-      const base64str = await res.text();
-      const dataUrl = "data:image/png;base64," + base64str.trim();
+      morphCtx.clearRect(0, 0, morphCanvas.width, morphCanvas.height);
+      morphCtx.globalAlpha = 1;
+      morphCtx.drawImage(oldImg, 0, 0);
+      morphCtx.globalAlpha = progress;
+      morphCtx.drawImage(newImg, 0, 0);
 
-      const processedImage = document.getElementById("processedImage");
-      const processedVideo = document.getElementById("processedVideo");
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // Ende: morphCanvas ausblenden, neues Bild anzeigen
+        processedImage.src = newImg.src;
+        morphCtx.clearRect(0, 0, morphCanvas.width, morphCanvas.height);
+        oldImageData = newImg;
+        resolve();
+      }
+    }
+    requestAnimationFrame(animate);
+  });
+}
 
-      processedVideo.style.display = "none";
-      processedVideo.pause();
-      processedVideo.src = "";
+// neu: sendImage nutzt morphImages
+async function sendImage() {
+  const blob = await getFrameBlob(video);
+  if (!blob) return showError("Konnte Bildblob nicht erstellen");
 
-      processedImage.style.display = "block";
-      processedImage.src = dataUrl;
+  const form = new FormData();
+  form.append("strength", document.getElementById('strength').value);
+  form.append("input", blob, "frame.png");
+  form.append("prompt", promptInput.value || "artistic style");
+  form.append("negative_prompt", document.getElementById('negative_prompt').value || "");
+  form.append("steps", document.getElementById('num_inference_steps').value);
+  form.append("scale", document.getElementById('guidance_scale').value);
+  form.append("seed", "33");
+  form.append("model", "lykon/dreamshaper-8");
 
+  const start = performance.now();
+
+  try {
+    const res = await fetch("/generate", { method: "POST", body: form });
+    if (!res.ok) throw new Error("Server antwortete mit Status " + res.status);
+    const base64str = await res.text();
+    const dataUrl = "data:image/png;base64," + base64str.trim();
+
+    const newImg = new Image();
+    newImg.onload = async () => {
+      await morphImages(oldImageData, newImg, 1000); // morph über 1 Sekunde
       const latency = (performance.now() - start) / 1000;
       latencyDisplay.textContent = `Verarbeitung: ${latency.toFixed(2)} Sekunden`;
       errorBox.style.display = "none";
-    } catch (e) {
-      showError("Fehler beim Senden: " + e.message);
-    }
+    };
+    newImg.src = dataUrl;
+  } catch (e) {
+    showError("Fehler beim Senden: " + e.message);
   }
+}
 
   function showError(msg) {
     errorBox.textContent = msg;
