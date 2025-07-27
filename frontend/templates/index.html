@@ -250,21 +250,25 @@ async function sendImage() {
 
   const start = performance.now();
 
-  try {
-    const res = await fetch("/generate", { method: "POST", body: form });
-    if (!res.ok) throw new Error("Server antwortete mit Status " + res.status);
-    const base64str = await res.text();
-    const dataUrl = "data:image/png;base64," + base64str.trim();
+	try {
+		const res = await fetch("/generate", { method: "POST", body: form });
+		if (!res.ok) throw new Error("Server antwortete mit Status " + res.status);
 
-    const newImg = new Image();
-    newImg.onload = async () => {
-      await morphImages(oldImageData, newImg, Math.max(200, 0.9 * Math.floor(get_avg_latency())));
-      const latency = (performance.now() - start) / 1000;
-      avg_latency.push(latency)
-      latencyDisplay.textContent = `Verarbeitung: ${latency.toFixed(2)} Sekunden`;
-      errorBox.style.display = "none";
-    };
-    newImg.src = dataUrl;
+		// Blob statt Text
+		const blob = await res.blob();
+		const objectUrl = URL.createObjectURL(blob);
+
+		const newImg = new Image();
+		newImg.onload = async () => {
+			URL.revokeObjectURL(objectUrl); // aufräumen
+			await morphImages(oldImageData, newImg, Math.max(200, 0.9 * Math.floor(get_avg_latency())));
+			const latency = (performance.now() - start) / 1000;
+			avg_latency.push(latency);
+			latencyDisplay.textContent = `Verarbeitung: ${latency.toFixed(2)} Sekunden`;
+			errorBox.style.display = "none";
+		};
+		newImg.src = objectUrl;
+
   } catch (e) {
     showError("Fehler beim Senden: " + e.message);
   }

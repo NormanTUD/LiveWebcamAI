@@ -14,7 +14,7 @@ from typing import Optional
 from PIL import Image
 import torch
 from diffusers import AutoPipelineForImage2Image, DEISMultistepScheduler
-from flask import Flask, request, abort, Response
+from flask import Flask, request, abort, Response, send_file
 from beartype import beartype
 
 LAST_GENERATED_IMAGE = None
@@ -323,7 +323,7 @@ def generate():
     print(f"Result saved at {output_path}")
 
     # Antwort senden (hier: Dateiname und Pfad im tmp, anpassen je nach Usecase)
-    return Response(base64.b64encode(open(output_path, "rb").read()).decode(), mimetype="text/plain")
+    return send_file(output_path, mimetype="image/png")
 
 dtype = torch.float16
 device = check_cuda()
