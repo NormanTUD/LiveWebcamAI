@@ -258,7 +258,7 @@ async function sendImage() {
 
     const newImg = new Image();
     newImg.onload = async () => {
-      await morphImages(oldImageData, newImg, 0.9 * Math.floor(get_avg_latency())); // morph über 1 Sekunde
+      await morphImages(oldImageData, newImg, Math.max(100, 0.9 * Math.floor(get_avg_latency())));
       const latency = (performance.now() - start) / 1000;
       avg_latency.push(latency)
       latencyDisplay.textContent = `Verarbeitung: ${latency.toFixed(2)} Sekunden`;
