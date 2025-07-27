@@ -26,7 +26,7 @@ def proxy_process():
     scale = request.form.get("scale", "7.5")
     seed = request.form.get("seed", "33")
     strength = request.form.get("strength", "0.4")
-    model = request.form.get("model", "lykon/dreamshaper-8")
+    model = request.form.get("model", "dreamlike-art/dreamlike-photoreal-2.0")
 
     try:
         # Bereite Files und Data für Backend-Request vor
