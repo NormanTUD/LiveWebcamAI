@@ -166,7 +166,7 @@ function setupMorphCanvas(width, height) {
   processedImage.style.display = "none";
 }
 
-async function morphImages(oldImg, newImg, duration = 1000) {
+async function morphImages(oldImg, newImg, duration = 300) {
   if (!oldImg) {
     // Erstes Bild einfach direkt anzeigen, Canvas ausblenden
     morphCanvas.style.display = 'none';
@@ -177,7 +177,7 @@ async function morphImages(oldImg, newImg, duration = 1000) {
   }
 
   if (morphCanvas.width !== newImg.width || morphCanvas.height !== newImg.height) {
-    setupMorphCanvas(newImg.width, newImg.height);
+    setupMorphCanvas(512, 512);
   }
 
   // Canvas anzeigen, Bild verstecken
