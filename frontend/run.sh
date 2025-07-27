@@ -8,7 +8,7 @@ fi
 
 source "$VENV_DIR/bin/activate"
 
-pip install --upgrade pip
+pip install -q --upgrade pip
 
 INSTALLED_PACKAGES=$(pip freeze | sed -e 's#=.*##' | tr '[:upper:]' '[:lower:]')
 
