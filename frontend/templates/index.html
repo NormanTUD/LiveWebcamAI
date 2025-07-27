@@ -1,78 +1,78 @@
 <!DOCTYPE html>
 <html lang="de">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🎥 Diffusion Control Panel</title>
-  <link rel="icon" href="static/favicon.ico" type="image/x-icon">
-  <link rel="stylesheet" href="static/style.css">
-  <meta name="description" content="Sende Live-Bilder deiner Webcam an Stable Diffusion zur Bildgenerierung.">
-  <style>
-  </style>
-</head>
-<body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>🎥 Diffusion Control Panel</title>
+		<link rel="icon" href="static/favicon.ico" type="image/x-icon">
+		<link rel="stylesheet" href="static/style.css">
+		<meta name="description" content="Sende Live-Bilder deiner Webcam an Stable Diffusion zur Bildgenerierung.">
+		<style>
+		</style>
+	</head>
+	<body>
 
-  <div class="left">
-    <h1>🎥 Kamera</h1>
-      <video id="webcam" autoplay muted playsinline></video>
+		<div class="left">
+			<h1>🎥 Kamera</h1>
+			<video id="webcam" autoplay muted playsinline></video>
 
-      <label for="model_select">Modell:</label>
-      <select id="model_select">
-	<option value="hakurei/waifu-diffusion">hakurei/waifu-diffusion</option>
-	<option value="stabilityai/stable-diffusion-2-1-base">stabilityai/stable-diffusion-2-1-base</option>
-	<option value="stabilityai/stable-diffusion-2-1">stabilityai/stable-diffusion-2-1</option>
-        <option value="dreamlike-art/dreamlike-photoreal-2.0">dreamlike-art/dreamlike-photoreal-2.0</option>
-        <option value="lykon/dreamshaper-8">lykon/dreamshaper-8</option>
-        <option value="runwayml/stable-diffusion-v1-5">runwayml/stable-diffusion-v1-5</option>
-        <option value="gsdf/Counterfeit-V2.5">gsdf/Counterfeit-V2.5</option>
-	<option value="SG161222/Realistic_Vision_V2.0">SG161222/Realistic_Vision_V2.0</option>
-	<option value="darkstorm2150/Protogen_x3.4">darkstorm2150/Protogen_x3.4</option>
-	<option value="CompVis/stable-diffusion-v1-4">CompVis/stable-diffusion-v1-4</option>
-	<option value="prompthero/openjourney">prompthero/openjourney</option>
-      </select>
+			<label for="model_select">Modell:</label>
+			<select id="model_select">
+				<option value="hakurei/waifu-diffusion">hakurei/waifu-diffusion</option>
+				<option value="stabilityai/stable-diffusion-2-1-base">stabilityai/stable-diffusion-2-1-base</option>
+				<option value="stabilityai/stable-diffusion-2-1">stabilityai/stable-diffusion-2-1</option>
+				<option value="dreamlike-art/dreamlike-photoreal-2.0">dreamlike-art/dreamlike-photoreal-2.0</option>
+				<option value="lykon/dreamshaper-8">lykon/dreamshaper-8</option>
+				<option value="runwayml/stable-diffusion-v1-5">runwayml/stable-diffusion-v1-5</option>
+				<option value="gsdf/Counterfeit-V2.5">gsdf/Counterfeit-V2.5</option>
+				<option value="SG161222/Realistic_Vision_V2.0">SG161222/Realistic_Vision_V2.0</option>
+				<option value="darkstorm2150/Protogen_x3.4">darkstorm2150/Protogen_x3.4</option>
+				<option value="CompVis/stable-diffusion-v1-4">CompVis/stable-diffusion-v1-4</option>
+				<option value="prompthero/openjourney">prompthero/openjourney</option>
+			</select>
 
-      <br>
+			<br>
 
-      <label for="prompt">Prompt:</label>
-      <input type="text" id="prompt" placeholder="Beschreibe den Stil…" />
-      <small>👉 Was soll im Bild zu sehen sein? Beschreibe es möglichst genau.</small>
+			<label for="prompt">Prompt:</label>
+			<input type="text" id="prompt" placeholder="Beschreibe den Stil…" />
+			<small>👉 Was soll im Bild zu sehen sein? Beschreibe es möglichst genau.</small>
 
-      <label for="negative_prompt">Negativer Prompt:</label>
-      <input type="text" id="negative_prompt" placeholder="Negativer Prompt (z.B. unerwünschte Inhalte)…" value="cartoon, painting, drawing, blurry, lowres, text, watermark" />
-      <small>🚫 Was soll NICHT im Bild vorkommen? (z. B. unscharf, Text, bestimmte Objekte)</small>
+			<label for="negative_prompt">Negativer Prompt:</label>
+			<input type="text" id="negative_prompt" placeholder="Negativer Prompt (z.B. unerwünschte Inhalte)…" value="cartoon, painting, drawing, blurry, lowres, text, watermark" />
+			<small>🚫 Was soll NICHT im Bild vorkommen? (z. B. unscharf, Text, bestimmte Objekte)</small>
 
-      <div class="slider-group">
-        <label for="num_inference_steps">Inference Steps: <span id="steps_val">5</span></label>
-        <input type="range" id="num_inference_steps" min="2" max="50" value="5"
-              oninput="document.getElementById('steps_val').innerText = this.value">
-        <small>⚙️ Wie oft wird das Bild verfeinert? Mehr Schritte = bessere Details (aber langsamer).</small>
-      </div>
+			<div class="slider-group">
+				<label for="num_inference_steps">Inference Steps: <span id="steps_val">5</span></label>
+				<input type="range" id="num_inference_steps" min="2" max="50" value="5"
+											      oninput="document.getElementById('steps_val').innerText = this.value">
+				<small>⚙️ Wie oft wird das Bild verfeinert? Mehr Schritte = bessere Details (aber langsamer).</small>
+			</div>
 
-      <div class="slider-group">
-        <label for="guidance_scale">Guidance Scale: <span id="scale_val">7.5</span></label>
-        <input type="range" id="guidance_scale" min="1" max="15" step="0.1" value="7.5"
-              oninput="document.getElementById('scale_val').innerText = this.value">
-        <small>🎯 Wie stark soll der Prompt beachtet werden? Höher = näher an deiner Beschreibung.</small>
-      </div>
+			<div class="slider-group">
+				<label for="guidance_scale">Guidance Scale: <span id="scale_val">7.5</span></label>
+				<input type="range" id="guidance_scale" min="1" max="15" step="0.1" value="7.5"
+												    oninput="document.getElementById('scale_val').innerText = this.value">
+				<small>🎯 Wie stark soll der Prompt beachtet werden? Höher = näher an deiner Beschreibung.</small>
+			</div>
 
-      <div class="slider-group">
-        <label for="strength">Image Strength: <span id="strength_val">0.35</span></label>
-        <input type="range" id="strength" min="0.3" max="0.9" step="0.01" value="0.5"
-              oninput="document.getElementById('strength_val').innerText = this.value">
-        <small>🖼️ Wie stark soll das aktuelle Kamerabild verändert werden? Wenig = mehr Original.</small>
-      </div>
+			<div class="slider-group">
+				<label for="strength">Image Strength: <span id="strength_val">0.35</span></label>
+				<input type="range" id="strength" min="0.3" max="0.9" step="0.01" value="0.5"
+												  oninput="document.getElementById('strength_val').innerText = this.value">
+				<small>🖼️ Wie stark soll das aktuelle Kamerabild verändert werden? Wenig = mehr Original.</small>
+			</div>
 
-      <div class="info"><span id="latency">Warte auf Bild…</span></div>
-      <div id="error" class="error" style="display:none;"></div>
-    </div>
+			<div class="info"><span id="latency">Warte auf Bild…</span></div>
+			<div id="error" class="error" style="display:none;"></div>
+		</div>
 
 
-  <div class="right">
-    <h1>🎨 Ergebnis</h1>
-    <img id="processedImage" style="display:none; width:512px; height: 512px;;" />
-  </div>
+		<div class="right">
+			<h1>🎨 Ergebnis</h1>
+			<img id="processedImage" style="display:none; width:512px; height: 512px;;" />
+		</div>
 
-<script src="static/main.js"></script>
+		<script src="static/main.js"></script>
 
-</body>
+	</body>
 </html>
