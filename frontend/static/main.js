@@ -31,7 +31,7 @@ async function getFrameBlob(video) {
 function setupMorphCanvas(width, height) {
 	morphCanvas.width = width;
 	morphCanvas.height = height;
-	processedImage.parentNode.insertBefore(morphCanvas, processedImage);
+	//processedImage.parentNode.insertBefore(morphCanvas, processedImage);
 	processedImage.style.display = "none";
 }
 
@@ -50,7 +50,7 @@ async function morphImages(oldImg, newImg, duration = 300) {
 	}
 
 	morphCanvas.style.display = 'block';
-	processedImage.style.display = 'none';
+	//processedImage.style.display = 'none';
 
 	return new Promise(resolve => {
 		let start = null;
