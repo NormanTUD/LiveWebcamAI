@@ -264,8 +264,8 @@ var avg_latency = [];
 	  form.append("model", document.getElementById('model_select').value);
 	  form.append("steps", document.getElementById('num_inference_steps').value);
 	  form.append("scale", document.getElementById('guidance_scale').value);
+	  form.append("model", document.getElementById('model_select').value);
 	  form.append("seed", "33");
-	  form.append("model", "lykon/dreamshaper-8");
 
 	  const start = performance.now();
 
