@@ -33,7 +33,10 @@ def setup_logging() -> None:
 @beartype
 def clean_memory() -> None:
     gc.collect()
-    torch.cuda.empty_cache()
+    try:
+        torch.cuda.empty_cache()
+    except RuntimeError as e:
+        logging.error(f"Fehler bei CUDA Cache-Leerung: {e}")
     torch.cuda.ipc_collect()
 
 @beartype
@@ -109,6 +112,16 @@ def run_image2image_pipeline(
 
     # Schritt 1: Initialbild bestimmen
     start = time.perf_counter()
+
+    if init_image.mode != "RGB":
+        logging.warning("Konvertiere init_image zu RGB")
+        init_image = init_image.convert("RGB")
+
+    # Optional: Größe prüfen
+    if init_image.size[0] < 64 or init_image.size[1] < 64:
+        logging.error("Init-Image ist zu klein!")
+
+
     if init_image is None:
         if LAST_GENERATED_IMAGE is None:
             logging.error("❌ Kein Startbild übergeben und auch kein vorheriges Bild vorhanden.")
