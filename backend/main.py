@@ -98,8 +98,10 @@ def load_pipeline(model_id: str) -> None:
             console.print(f"Lade Pipeline für Modell '{model_id}' für GPU Nr. {i + 1}/{nr_gpus}...")
             console.print("-> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> ->")
 
+            print("A");
             PIPES[i] = {}
 
+            print("B");
             PIPES[i]["function"] = AutoPipelineForImage2Image.from_pretrained(
                 model_id,
                 torch_dtype=dtype,
@@ -107,17 +109,21 @@ def load_pipeline(model_id: str) -> None:
                 low_cpu_mem_usage=True,
             )
 
+            print("C");
             PIPES[i]["is_blocked"] = False
 
+            print("D");
             PIPES[i]["function"].scheduler = DEISMultistepScheduler.from_config(PIPES[i]["function"].scheduler.config)
             PIPES[i]["function"].safety_checker = None
             PIPES[i]["function"].enable_xformers_memory_efficient_attention()
             PIPES[i]["function"].enable_attention_slicing()
 
+            print("E");
             PIPES[i]["function"] = PIPES[i]["function"].to(device)
             CURRENT_MODEL_ID = model_id
             LAST_GENERATED_IMAGE = None
             console.print(f"Pipeline erfolgreich geladen auf Gerät: {next(PIPE.unet.parameters()).device} für GPU Nr. {i + 1}/{nr_gpus}")
+            print("F");
 
     except Exception as e:
         logging.error(f"Fehler beim Laden der Pipeline: {e}")
