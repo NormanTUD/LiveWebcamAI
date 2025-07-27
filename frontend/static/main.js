@@ -1,9 +1,14 @@
+const morphCanvas = document.createElement('canvas');
+const morphCtx = morphCanvas.getContext('2d');
+const processedImage = document.getElementById("processedImage");
 const video = document.getElementById('webcam');
 const promptInput = document.getElementById('prompt');
 const latencyDisplay = document.getElementById('latency');
 const errorBox = document.getElementById('error');
 
+let oldImageData = null;
 let delay = 1000;
+let avg_latency = [];
 
 async function startWebcam() {
 	try {
@@ -22,11 +27,6 @@ async function getFrameBlob(video) {
 	ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 	return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
 }
-
-let oldImageData = null;
-const morphCanvas = document.createElement('canvas');
-const morphCtx = morphCanvas.getContext('2d');
-const processedImage = document.getElementById("processedImage");
 
 function setupMorphCanvas(width, height) {
 	morphCanvas.width = width;
@@ -84,8 +84,6 @@ async function morphImages(oldImg, newImg, duration = 300) {
 		requestAnimationFrame(animate);
 	});
 }
-
-var avg_latency = [];
 
 function get_avg_latency () {
 	if(avg_latency.length == 0) {
