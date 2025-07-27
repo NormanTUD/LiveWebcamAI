@@ -235,16 +235,22 @@ def generate():
     print(f"Output filename generated: {output_filename}")
 
     # Pipeline ausführen
+    params = {
+        "prompt": request.form.get("prompt", ""),
+        "negative_prompt": request.form.get("negative_prompt", ""),
+        "num_inference_steps": int(request.form.get("steps", 25)),
+        "guidance_scale": float(request.form.get("scale", 7.5)),
+        "init_image": init_image,
+        "seed": int(request.form.get("seed", 33)),
+        "strength": float(request.form.get("strength", 0.4))
+    }
+
+    print("Parameters for image2image pipeline:")
+    for k, v in params.items():
+        print(f"  {k}: {v}")
+
     print("Starting image2image pipeline...")
-    result = run_image2image_pipeline(
-        prompt=request.form.get("prompt", ""),
-        negative_prompt=request.form.get("negative_prompt", ""),
-        num_inference_steps=int(request.form.get("steps", 25)),
-        guidance_scale=float(request.form.get("scale", 7.5)),
-        init_image=init_image,
-        seed=int(request.form.get("seed", 33)),
-        strength=float(request.form.get("strength", 0.4))
-    )
+    result = run_image2image_pipeline(**params)
     print("Pipeline finished.")
 
     if not result:
