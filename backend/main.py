@@ -177,13 +177,21 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int):
         return
     try:
         console.print("Führe Warmup-Durchlauf durch...")
-        _ = PIPES[pipe_nr]["function"](
-            prompt="simple warmup",
-            image=[image],
-            ip_adapter_image=PREVIOUS_FRAMES,
-            num_inference_steps=2,
-            guidance_scale=guidance_scale
-        )
+        if len(PREVIOUS_FRAMES):
+            _ = PIPES[pipe_nr]["function"](
+                prompt="simple warmup",
+                image=[image],
+                ip_adapter_image=PREVIOUS_FRAMES,
+                num_inference_steps=2,
+                guidance_scale=guidance_scale
+            )
+        else:
+            _ = PIPES[pipe_nr]["function"](
+                prompt="simple warmup",
+                image=[image],
+                num_inference_steps=2,
+                guidance_scale=guidance_scale
+            )
         WARMUP_DONE = True
     except Exception as e:
         logging.warning(f"Warmup fehlgeschlagen (wird ignoriert): {e}")
