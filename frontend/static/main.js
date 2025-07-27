@@ -28,7 +28,6 @@ const morphCanvas = document.createElement('canvas');
 const morphCtx = morphCanvas.getContext('2d');
 const processedImage = document.getElementById("processedImage");
 
-// Setup morphCanvas size gleich dem Bild
 function setupMorphCanvas(width, height) {
 	morphCanvas.width = width;
 	morphCanvas.height = height;
@@ -42,7 +41,7 @@ async function morphImages(oldImg, newImg, duration = 300) {
 		processedImage.style.display = 'block';
 		processedImage.src = newImg.src;
 		oldImageData = new Image();
-		oldImageData.src = newImg.src; // neues Image-Objekt
+		oldImageData.src = newImg.src;
 		return;
 	}
 
@@ -70,7 +69,6 @@ async function morphImages(oldImg, newImg, duration = 300) {
 			if (progress < 1) {
 				requestAnimationFrame(animate);
 			} else {
-				// Warten bis neues Bild geladen ist, bevor sichtbar
 				const newProcessedImg = new Image();
 				newProcessedImg.onload = () => {
 					morphCanvas.style.display = 'none';
@@ -122,13 +120,12 @@ async function sendImage() {
 		const res = await fetch("/generate", { method: "POST", body: form });
 		if (!res.ok) throw new Error("Server antwortete mit Status " + res.status);
 
-		// Blob statt Text
 		const blob = await res.blob();
 		const objectUrl = URL.createObjectURL(blob);
 
 		const newImg = new Image();
 		newImg.onload = async () => {
-			URL.revokeObjectURL(objectUrl); // aufräumen
+			URL.revokeObjectURL(objectUrl);
 			await morphImages(oldImageData, newImg, Math.max(200, 0.9 * Math.floor(get_avg_latency())));
 			const latency = (performance.now() - start) / 1000;
 			avg_latency.push(latency);
