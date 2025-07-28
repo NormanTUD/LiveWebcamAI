@@ -178,7 +178,8 @@ WARMUP_DONE = False
 
 @beartype
 def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: str):
-    global WARMUP_DONE
+    global WARMUP_DONE, GENERATOR
+
     if WARMUP_DONE:
         return
     try:
