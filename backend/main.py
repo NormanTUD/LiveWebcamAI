@@ -141,7 +141,7 @@ def load_pipeline(model_id: str) -> None:
             pipe["function"] = pipe["function"].to(f"cuda:{i}")
 
             if i == 0:
-                print_function_signature_table("AutoPipelineForImage2Image", inspect.signature(pipe["function"]))
+                print_function_signature_table("AutoPipelineForImage2Image", pipe["function"])
 
             CURRENT_MODEL_ID = model_id
 
