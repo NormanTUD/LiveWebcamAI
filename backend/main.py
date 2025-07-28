@@ -228,10 +228,12 @@ def get_pipe_nr():
 
 @beartype
 def block_pipe(pipe_nr) -> None:
+    console.print("Blocking pipe {pipe_nr}")
     PIPES[pipe_nr]["is_blocked"] = True
 
 @beartype
 def release_pipe(pipe_nr) -> None:
+    console.print("Releasing pipe {pipe_nr}")
     PIPES[pipe_nr]["is_blocked"] = False
 
 @beartype
@@ -305,7 +307,6 @@ def run_image2image_pipeline(
     console.print(base_args)
 
     output = PIPES[pipe_nr]["function"](**base_args)
-
 
     release_pipe(pipe_nr)
 
