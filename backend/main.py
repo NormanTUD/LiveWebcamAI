@@ -177,7 +177,7 @@ def load_pipeline(model_id: str) -> None:
 WARMUP_DONE = False
 
 @beartype
-def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: str):
+def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: str, seed: int):
     global WARMUP_DONE, GENERATOR
 
     if WARMUP_DONE:
@@ -271,7 +271,7 @@ def run_image2image_pipeline(
 
     # Schritt 2: Warmup
     start = time.perf_counter()
-    run_warmup(init_image, guidance_scale, pipe_nr, prompt)
+    run_warmup(init_image, guidance_scale, pipe_nr, prompt, seed)
     end = time.perf_counter()
     timings["Warmup"] = end - start
 
