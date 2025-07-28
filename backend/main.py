@@ -320,11 +320,11 @@ def run_image2image_pipeline(
         "strength": strength
     }
 
+    if "added_cond_kwargs" not in params or params["added_cond_kwargs"] is None:
+        params["added_cond_kwargs"] = {}
+
     if PREVIOUS_FRAMES is not None and len(PREVIOUS_FRAMES) != 0:
         params["ip_adapter_image"] = list(PREVIOUS_FRAMES)[-1]
-    else:
-        if "added_cond_kwargs" not in params or params["added_cond_kwargs"] is None:
-            params["added_cond_kwargs"] = {}
 
     console.print("params:")
     console.print(params)
