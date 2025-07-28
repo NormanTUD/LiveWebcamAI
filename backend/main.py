@@ -223,6 +223,12 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: 
             "guidance_scale": guidance_scale,
         }
 
+        if "added_cond_kwargs" not in params or params["added_cond_kwargs"] is None:
+            params["added_cond_kwargs"] = {}
+
+        #if PREVIOUS_FRAMES is not None and len(PREVIOUS_FRAMES) != 0:
+        #    params["ip_adapter_image"] = list(PREVIOUS_FRAMES)[-1]
+
         # Füge den Parameter 'ip_adapter_image' hinzu, falls PREVIOUS_FRAMES vorhanden sind
         if len(PREVIOUS_FRAMES):
             #params["ip_adapter_image"] = list(PREVIOUS_FRAMES)
