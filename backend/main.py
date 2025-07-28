@@ -207,7 +207,7 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: 
     if WARMUP_DONE:
         return
     try:
-        previous_latents = LATENTS_BUFFER[0] if latents_buffer else None
+        previous_latents = LATENTS_BUFFER[0] if LATENTS_BUFFER else None
         console.print("Führe Warmup-Durchlauf durch...")
         if len(PREVIOUS_FRAMES):
             _ = PIPES[pipe_nr]["function"](
