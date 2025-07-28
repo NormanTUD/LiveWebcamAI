@@ -33,11 +33,16 @@ const video = document.getElementById('webcam');
 const promptInput = document.getElementById('prompt');
 const latencyDisplay = document.getElementById('latency');
 const errorBox = document.getElementById('error');
+var is_switching_models = false;
 var nr_gpus = 0;
 
 let oldImageData = null;
 let delay = 1000;
 let avg_latency = [];
+
+function switchModels() {
+	showSpinner("Switching model");
+}
 
 async function startWebcam() {
 	try {
@@ -157,6 +162,8 @@ async function sendImage() {
 			avg_latency.push(latency);
 			latencyDisplay.textContent = `Verarbeitung: ${latency.toFixed(2)} Sekunden`;
 			errorBox.style.display = "none";
+
+			hideSpinner();
 		};
 		newImg.src = objectUrl;
 	} catch (e) {
