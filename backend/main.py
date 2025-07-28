@@ -22,7 +22,7 @@ from rich.style import Style
 from PIL import Image
 import torch
 from diffusers import AutoPipelineForImage2Image, DEISMultistepScheduler
-from flask import Flask, request, abort, Response, send_file
+from flask import Flask, request, abort, Response, send_file, jsonify
 from beartype import beartype
 
 console = Console()
