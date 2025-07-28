@@ -146,10 +146,10 @@ def load_pipeline(model_id: str) -> None:
             CURRENT_MODEL_ID = model_id
 
             print("load_ip_adapter", pipe["function"].load_ip_adapter)
+            print("Loading IP adapter")
             pipe["function"].load_ip_adapter("h94/IP-Adapter", subfolder="sdxl_models", weight_name="ip-adapter_sdxl.bin")
+            print("Done loading IP adapter")
             
-            pipe["function"].disable_attention_slicing()
-
             insert_or_replace(i, pipe)
 
             console.print(f"Pipeline erfolgreich geladen auf GPU Nr. {i + 1}/{nr_gpus}")
