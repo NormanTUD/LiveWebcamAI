@@ -1,24 +1,26 @@
-function getNumberOfGPUsUntilSuccess(retryDelay = 500) {
+const log = console.log;
+
+async function getNumberOfGPUsUntilSuccess(retryDelay = 500) {
 	showSpinner("Waiting for HPC-Server...");
-	function tryFetch() {
-		fetch("/serverinfo")
-			.then(res => {
-				if (!res.ok) throw new Error("Antwort nicht OK");
-				return res.json();
-			})
-			.then(data => {
-				if ("available_gpus" in data) {
-					console.log("Anzahl CPUs:", data.available_gpus);
-					hideSpinner();
-					return data["available_gpus"];
-				} else {
-					throw new Error("available_gpus fehlt im JSON");
-				}
-			})
-			.catch(err => {
-				console.warn("Fehler beim Abrufen, versuche erneut in", retryDelay, "ms:", err.message);
-				setTimeout(tryFetch, retryDelay);
-			});
+
+	async function tryFetch() {
+		try {
+			const res = await fetch("/serverinfo");
+			if (!res.ok) throw new Error("Antwort nicht OK");
+			const data = await res.json();
+
+			if ("available_gpus" in data) {
+				console.log("Anzahl GPUs:", data.available_gpus);
+				hideSpinner();
+				return data.available_gpus;
+			} else {
+				throw new Error("available_gpus fehlt im JSON");
+			}
+		} catch (err) {
+			console.warn("Fehler beim Abrufen, versuche erneut in", retryDelay, "ms:", err.message);
+			await new Promise(resolve => setTimeout(resolve, retryDelay));
+			return tryFetch();  // Wiederholung
+		}
 	}
 
 	return tryFetch();
@@ -31,7 +33,7 @@ const video = document.getElementById('webcam');
 const promptInput = document.getElementById('prompt');
 const latencyDisplay = document.getElementById('latency');
 const errorBox = document.getElementById('error');
-const nr_gpus = getNumberOfGPUsUntilSuccess(); // TODO: Dynamisch bestimmen
+var nr_gpus = 0;
 
 let oldImageData = null;
 let delay = 1000;
@@ -271,6 +273,8 @@ async function startJob() {
 }
 
 async function loop() {
+	nr_gpus = await getNumberOfGPUsUntilSuccess();
+
 	targetInterval = getAvgDuration() / nr_gpus;
 
 	while(true) {
