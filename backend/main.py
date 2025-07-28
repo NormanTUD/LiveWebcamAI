@@ -289,8 +289,10 @@ def run_image2image_pipeline(
 
     # Schritt 3: Generator vorbereiten
     start = time.perf_counter()
+
     if GENERATOR is None:
         GENERATOR = torch.Generator(device=f"cuda:{pipe_nr}").manual_seed(seed)
+
     end = time.perf_counter()
     timings["Seed setzen"] = end - start
 
