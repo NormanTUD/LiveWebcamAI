@@ -302,8 +302,7 @@ def run_image2image_pipeline(
     }
 
     if PREVIOUS_FRAMES is not None and len(PREVIOUS_FRAMES) != 0:
-        #params["ip_adapter_image"] = list(PREVIOUS_FRAMES)
-        pass
+        params["ip_adapter_image"] = list(PREVIOUS_FRAMES)
 
     console.print("params:")
     console.print(params)
