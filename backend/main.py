@@ -141,31 +141,14 @@ def load_pipeline(model_id: str) -> None:
             pipe["function"] = pipe["function"].to(f"cuda:{i}")
 
             if i == 0:
-                sig = inspect.signature(pipe["function"])
-
-                table = Table(title="Parameters of the AutoPipelineForImage2Image")
-
-                table.add_column("Name", style="bold")
-                table.add_column("Default", style="dim")
-                table.add_column("Annotation", style="cyan")
-
-                for name, param in sig.parameters.items():
-                    default = (
-                        "–" if param.default is inspect.Parameter.empty else repr(param.default)
-                    )
-                    annotation = (
-                        "–" if param.annotation is inspect.Parameter.empty else repr(param.annotation)
-                    )
-                    table.add_row(name, default, annotation)
-
-                console.print(table)
+                print_function_signature_table("AutoPipelineForImage2Image", inspect.signature(pipe["function"]))
 
             CURRENT_MODEL_ID = model_id
 
+            print("load_ip_adapter", pipe["function"].load_ip_adapter)
             pipe["function"].load_ip_adapter("h94/IP-Adapter", subfolder="sdxl_models", weight_name="ip-adapter_sdxl.bin")
             
             pipe["function"].disable_attention_slicing()
-
 
             insert_or_replace(i, pipe)
 
@@ -178,6 +161,30 @@ def load_pipeline(model_id: str) -> None:
 
     CURRENTLY_LOADING_PIPELINE = False
     return None
+
+def print_function_signature_table(name, fn):
+    try:
+        sig = inspect.signature(fn)
+    except Exception as e:
+        raise ValueError(f"Could not inspect function '{name}': {e}")
+
+    table = Table(title=f"Parameters of {name}")
+
+    table.add_column("Name", style="bold")
+    table.add_column("Default", style="dim")
+    table.add_column("Annotation", style="cyan")
+
+    for param_name, param in sig.parameters.items():
+        default = (
+            "–" if param.default is inspect.Parameter.empty else repr(param.default)
+        )
+        annotation = (
+            "–" if param.annotation is inspect.Parameter.empty else repr(param.annotation)
+        )
+        table.add_row(param_name, default, annotation)
+
+    console = Console()
+    console.print(table)
 
 WARMUP_DONE = False
 
