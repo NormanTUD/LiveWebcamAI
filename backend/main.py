@@ -206,7 +206,7 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: 
 
         # Füge den Parameter 'ip_adapter_image' hinzu, falls PREVIOUS_FRAMES vorhanden sind
         if len(PREVIOUS_FRAMES):
-            params["ip_adapter_image"] = PREVIOUS_FRAMES
+            params["ip_adapter_image"] = list(PREVIOUS_FRAMES)
 
         try:
             # Rufe die Funktion mit den erstellten Parametern auf
@@ -301,7 +301,7 @@ def run_image2image_pipeline(
     }
 
     if PREVIOUS_FRAMES is not None and len(PREVIOUS_FRAMES) != 0:
-        base_args["ip_adapter_image"] = PREVIOUS_FRAMES
+        base_args["ip_adapter_image"] = list(PREVIOUS_FRAMES)
 
     console.print("base_args:")
     console.print(base_args)
