@@ -25,6 +25,7 @@ print("Importing special modules")
 from PIL import Image
 import torch
 from diffusers import AutoPipelineForImage2Image, DEISMultistepScheduler
+from diffusers.models.attention_processor import SlicedAttnProcessor
 from flask import Flask, request, abort, Response, send_file, jsonify
 from beartype import beartype
 print("Done importing modules")
@@ -144,6 +145,8 @@ def load_pipeline(model_id: str) -> None:
                 print_function_signature_table("AutoPipelineForImage2Image", pipe["function"])
 
             CURRENT_MODEL_ID = model_id
+
+            pipe["function"].unet.set_attn_processor(SlicedAttnProcessor(slice_size=1))
 
             print("load_ip_adapter", pipe["function"].load_ip_adapter)
             print("Loading IP adapter")
