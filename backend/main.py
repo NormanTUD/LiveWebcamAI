@@ -184,6 +184,10 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: 
     try:
         console.print("Führe Warmup-Durchlauf durch...")
 
+
+        if GENERATOR is None:
+            GENERATOR = torch.Generator(device=f"cuda:{pipe_nr}").manual_seed(seed)
+
         try:
             # Hole die Funktion aus PIPES für den angegebenen pipe_nr
             pipe_func = PIPES[pipe_nr]["function"]
@@ -194,6 +198,7 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: 
         params = {
             "prompt": prompt,
             "image": [image],
+            "generator": GENERATOR,
             "num_inference_steps": 2,
             "guidance_scale": guidance_scale,
         }
