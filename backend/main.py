@@ -281,8 +281,6 @@ def run_image2image_pipeline(
     if output and output.images and len(output.images) > 0:
         result = output.images[0]
 
-        PREVIOUS_FRAMES.append(result)
-
         end = time.perf_counter()
         timings["Ergebnis speichern"] = end - start
         total_time = time.perf_counter() - start_total
@@ -492,11 +490,13 @@ def generate():
     print(f"Result saved at {output_path}")
 
     if LAST_SUCCESSFUL_REQUEST_TIME is not None and this_request_time < LAST_SUCCESSFUL_REQUEST_TIME:
-        abort(500, description="Image was outdated (1)")
+        abort(500, description="Image was outdated (2)")
 
     # Antwort senden (hier: Dateiname und Pfad im tmp, anpassen je nach Usecase)
 
     LAST_SUCCESSFUL_REQUEST_TIME = this_request_time
+
+    PREVIOUS_FRAMES.append(result)
 
     return send_file(output_path, mimetype="image/png")
 
