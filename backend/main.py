@@ -122,6 +122,8 @@ def load_pipeline(model_id: str) -> None:
 
             pipe = {}
 
+            pipe["name"] = model_id
+
             pipe["function"] = AutoPipelineForImage2Image.from_pretrained(
                 model_id,
                 torch_dtype=dtype,
@@ -160,11 +162,11 @@ def load_pipeline(model_id: str) -> None:
 
             CURRENT_MODEL_ID = model_id
 
+            pipe.load_ip_adapter("h94/IP-Adapter", subfolder="sdxl_models", weight_name="ip-adapter_sdxl.bin")
+
             insert_or_replace(i, pipe)
 
             console.print(f"Pipeline erfolgreich geladen auf GPU Nr. {i + 1}/{nr_gpus}")
-
-            PIPES[i]["name"] = model_id
 
     except Exception as e:
         CURRENTLY_LOADING_PIPELINE = False
