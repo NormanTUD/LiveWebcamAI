@@ -322,6 +322,9 @@ def run_image2image_pipeline(
 
     if PREVIOUS_FRAMES is not None and len(PREVIOUS_FRAMES) != 0:
         params["ip_adapter_image"] = list(PREVIOUS_FRAMES)[-1]
+    else:
+        if "added_cond_kwargs" not in params or params["added_cond_kwargs"] is None:
+            params["added_cond_kwargs"] = {}
 
     console.print("params:")
     console.print(params)
@@ -512,8 +515,24 @@ def generate():
 
     pipeline_start_time = time.time()
 
-    result = run_image2image_pipeline(**params)
-
+    try:
+        result = run_image2image_pipeline(**params)
+    except Exception as e:
+        print(f"Pipeline error: {e}")
+        # Fallback: versuche mit Standard-Params
+        print("Retrying with fallback parameters...")
+        fallback_params = {
+            **params,
+            "num_inference_steps": 25,
+            "strength": 0.4,
+            "guidance_scale": 7.5,
+        }
+        try:
+            result = run_image2image_pipeline(**fallback_params)
+        except Exception as e2:
+            print(f"Fallback also failed: {e2}")
+            shutil.rmtree(tmp_dir)
+            abort(500, description="Image generation failed after fallback")
 
     pipeline_start_end = time.time()
 
