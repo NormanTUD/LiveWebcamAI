@@ -155,7 +155,7 @@ def load_pipeline(model_id: str) -> None:
             print("Done loading IP adapter")
 
             print("Disabling slicing")
-            pipe.disable_attention_slicing()
+            pipe["function"].disable_attention_slicing()
             
             insert_or_replace(i, pipe)
 
