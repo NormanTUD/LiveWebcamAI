@@ -24,7 +24,7 @@ from rich.style import Style
 print("Importing special modules")
 from PIL import Image
 import torch
-from diffusers import AutoPipelineForImage2Image, DEISMultistepScheduler
+from diffusers import AutoPipelineForImage2Image, DEISMultistepScheduler, SlicedAttnProcessor
 from flask import Flask, request, abort, Response, send_file, jsonify
 from beartype import beartype
 print("Done importing modules")
@@ -163,6 +163,10 @@ def load_pipeline(model_id: str) -> None:
             CURRENT_MODEL_ID = model_id
 
             pipe["function"].load_ip_adapter("h94/IP-Adapter", subfolder="sdxl_models", weight_name="ip-adapter_sdxl.bin")
+            
+            for name, module in pipe.unet.named_modules():
+                if hasattr(module, "set_attn_processor"):
+                    module.set_attn_processor(SlicedAttnProcessor(slice_size=1))
 
             insert_or_replace(i, pipe)
 
