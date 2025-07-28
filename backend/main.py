@@ -162,7 +162,7 @@ def load_pipeline(model_id: str) -> None:
 
             CURRENT_MODEL_ID = model_id
 
-            pipe.load_ip_adapter("h94/IP-Adapter", subfolder="sdxl_models", weight_name="ip-adapter_sdxl.bin")
+            pipe["function"].load_ip_adapter("h94/IP-Adapter", subfolder="sdxl_models", weight_name="ip-adapter_sdxl.bin")
 
             insert_or_replace(i, pipe)
 
