@@ -57,7 +57,8 @@ def proxy_process():
             "scale": scale,
             "seed": seed,
             "model": model,
-            "strength": strength
+            "strength": strength,
+            "time": time.time()
         }
 
         print(f"[proxy_process] Sende Bild '{file.filename}' an Backend-Service...", file=sys.stderr)

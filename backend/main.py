@@ -29,6 +29,7 @@ console = Console()
 
 CURRENTLY_LOADING_PIPELINE = False
 CURRENT_MODEL_ID = None
+LAST_SUCCESSFUL_REQUEST_TIME = None
 
 app = Flask(__name__)
 
@@ -386,6 +387,8 @@ def clamp_params(params):
 @beartype
 @app.route("/generate", methods=["POST"])
 def generate():
+    global LAST_SUCCESSFUL_REQUEST_TIME
+
     # Datei auslesen
     input_file = request.files.get("input")
     if not input_file:
@@ -420,6 +423,11 @@ def generate():
     # Pipeline ausführen
 
     prompt = request.form.get("prompt", "") + ", ultra detailed, 8k, realistic lighting, sharp focus"
+
+    this_request_time = float(request.form.get("time", 0.4))
+
+    if LAST_SUCCESSFUL_REQUEST_TIME is not None and this_request_time < LAST_SUCCESSFUL_REQUEST_TIME:
+        abort(500, description="Image was outdated (1)")
 
     params = {
         "prompt": prompt,
@@ -483,7 +491,13 @@ def generate():
     result.save(output_path)
     print(f"Result saved at {output_path}")
 
+    if LAST_SUCCESSFUL_REQUEST_TIME is not None and this_request_time < LAST_SUCCESSFUL_REQUEST_TIME:
+        abort(500, description="Image was outdated (1)")
+
     # Antwort senden (hier: Dateiname und Pfad im tmp, anpassen je nach Usecase)
+
+    LAST_SUCCESSFUL_REQUEST_TIME = this_request_time
+
     return send_file(output_path, mimetype="image/png")
 
 setup_logging()
