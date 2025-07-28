@@ -35,6 +35,7 @@ print("Defining console")
 console = Console()
 print("Done defining console")
 
+LATENTS_BUFFER = []
 GENERATOR = None
 CURRENTLY_LOADING_PIPELINE = False
 CURRENT_MODEL_ID = None
@@ -207,6 +208,7 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: 
     if WARMUP_DONE:
         return
     try:
+        previous_latents = LATENTS_BUFFER[0] if latents_buffer else None
         console.print("Führe Warmup-Durchlauf durch...")
         if len(PREVIOUS_FRAMES):
             _ = PIPES[pipe_nr]["function"](
@@ -215,6 +217,9 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: 
                 image=[image],
                 ip_adapter_image=PREVIOUS_FRAMES,
                 num_inference_steps=2,
+                latents=previous_latents.to(f"cuda:{pipe_nr}"),
+                callback_on_step_end=save_latents_callback,
+                callback_on_step_end_tensor_inputs=["latents"],
                 guidance_scale=guidance_scale
             )
         else:
@@ -223,6 +228,9 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: 
                 prompt_embeds=get_prompt_embeds(prompt),
                 image=[image],
                 num_inference_steps=2,
+                latents=previous_latents.to(f"cuda:{pipe_nr}"),
+                callback_on_step_end=save_latents_callback,
+                callback_on_step_end_tensor_inputs=["latents"],
                 guidance_scale=guidance_scale
             )
         WARMUP_DONE = True
@@ -245,6 +253,11 @@ def block_pipe(pipe_nr) -> None:
 @beartype
 def release_pipe(pipe_nr) -> None:
     PIPES[pipe_nr]["is_blocked"] = False
+
+def save_latents_callback(step: int, timestep: int, latents: torch.Tensor):
+    # Speichert das letzte Latents-Tensor
+    LATENTS_BUFFER.clear()
+    LATENTS_BUFFER.append(latents.detach().cpu().clone())
 
 @beartype
 def run_image2image_pipeline(
@@ -296,6 +309,8 @@ def run_image2image_pipeline(
     end = time.perf_counter()
     timings["Seed setzen"] = end - start
 
+    previous_latents = LATENTS_BUFFER[0] if latents_buffer else None
+
     # Schritt 4: Bildgenerierung
     start = time.perf_counter()
     console.print("🖼️ Starte Bildgenerierung mit Diffusion Pipeline...")
@@ -306,6 +321,9 @@ def run_image2image_pipeline(
         image=[init_image],
         generator=GENERATOR,
         num_inference_steps=num_inference_steps,
+        latents=previous_latents.to(f"cuda:{pipe_nr}"),
+        callback_on_step_end=save_latents_callback,
+        callback_on_step_end_tensor_inputs=["latents"],
         ip_adapter_image=PREVIOUS_FRAMES,
         guidance_scale=guidance_scale,
         strength=strength
