@@ -1,16 +1,4 @@
-# Tested models:
-# Work:
-# - lykon/dreamshaper-8
-# - runwayml/stable-diffusion-v1-5
-# - dreamlike-art/dreamlike-photoreal-2.0
-# - gsdf/Counterfeit-V2.5
-# - dreamlike-art/dreamlike-photoreal-2.0
-# Don't work:
-# - stabilityai/stable-diffusion-2-inpainting
-# - kandinsky-community/kandinsky-2-2
-# - civitai/anything-v4.5
-# - imagepipeline/Realistic-Stock-Photo
-
+import socket
 import sys
 import base64
 import os
@@ -65,6 +53,15 @@ def count_available_gpus() -> int:
         return torch.cuda.device_count()
     else:
         return 0
+
+@beartype
+@app.route("/serverinfo", methods=["GET"])
+def server_info():
+    info = {
+        "hostname": socket.gethostname(),
+        "available_gpus": count_available_gpus()
+    }
+    return jsonify(info)
 
 @beartype
 def load_image(path: str, size=(512, 512)) -> Image.Image:

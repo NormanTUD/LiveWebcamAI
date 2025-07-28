@@ -12,6 +12,25 @@ def index():
     return render_template("index.html")
 
 @beartype
+@app.route("/serverinfo", methods=["GET"])
+def proxy_server_info():
+    try:
+        print("[proxy_server_info] Frage Serverinformationen vom Backend ab...", file=sys.stderr)
+
+        # Anfrage an das Backend senden
+        backend_res = requests.get("http://localhost:9932/serverinfo", timeout=5)
+        backend_res.raise_for_status()
+
+        print("[proxy_server_info] Antwort vom Backend erhalten", file=sys.stderr)
+
+        # JSON direkt durchreichen
+        return jsonify(backend_res.json())
+
+    except Exception as e:
+        print(f"[proxy_server_info] Fehler beim Abrufen der Serverinformationen: {e}", file=sys.stderr)
+        return jsonify({"error": f"Fehler beim Abrufen der Serverinformationen: {str(e)}"}), 500
+
+@beartype
 @app.route("/generate", methods=["POST"])
 def proxy_process():
     file = request.files.get("input")  # Name sollte "input" sein, wie im Backend erwartet

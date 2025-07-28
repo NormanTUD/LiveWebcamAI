@@ -1,3 +1,29 @@
+function getNumberOfGPUsUntilSuccess(retryDelay = 500) {
+	showSpinner("Waiting for HPC-Server...");
+	function tryFetch() {
+		fetch("/serverinfo")
+			.then(res => {
+				if (!res.ok) throw new Error("Antwort nicht OK");
+				return res.json();
+			})
+			.then(data => {
+				if ("available_gpus" in data) {
+					console.log("Anzahl CPUs:", data.available_gpus);
+					hideSpinner();
+					return data["available_gpus"];
+				} else {
+					throw new Error("available_gpus fehlt im JSON");
+				}
+			})
+			.catch(err => {
+				console.warn("Fehler beim Abrufen, versuche erneut in", retryDelay, "ms:", err.message);
+				setTimeout(tryFetch, retryDelay);
+			});
+	}
+
+	return tryFetch();
+}
+
 const morphCanvas = document.createElement('canvas');
 const morphCtx = morphCanvas.getContext('2d');
 const processedImage = document.getElementById("processedImage");
@@ -5,7 +31,7 @@ const video = document.getElementById('webcam');
 const promptInput = document.getElementById('prompt');
 const latencyDisplay = document.getElementById('latency');
 const errorBox = document.getElementById('error');
-const nr_gpus = 4; // TODO: Dynamisch bestimmen
+const nr_gpus = getNumberOfGPUsUntilSuccess(); // TODO: Dynamisch bestimmen
 
 let oldImageData = null;
 let delay = 1000;
