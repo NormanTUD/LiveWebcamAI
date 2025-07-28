@@ -287,16 +287,27 @@ def run_image2image_pipeline(
     # Schritt 4: Bildgenerierung
     start = time.perf_counter()
     console.print("🖼️ Starte Bildgenerierung mit Diffusion Pipeline...")
-    output = PIPES[pipe_nr]["function"](
-        prompt=prompt,
-        negative_prompt=negative_prompt,
-        image=[init_image],
-        generator=GENERATOR,
-        num_inference_steps=num_inference_steps,
-        ip_adapter_image=PREVIOUS_FRAMES,
-        guidance_scale=guidance_scale,
-        strength=strength
-    )
+    if PREVIOUS_FRAMES is not None and len(PREVIOUS_FRAMES) != 0:
+        output = PIPES[pipe_nr]["function"](
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            image=[init_image],
+            generator=GENERATOR,
+            num_inference_steps=num_inference_steps,
+            ip_adapter_image=PREVIOUS_FRAMES,
+            guidance_scale=guidance_scale,
+            strength=strength
+        )
+    else:
+        output = PIPES[pipe_nr]["function"](
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            image=[init_image],
+            generator=GENERATOR,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            strength=strength
+        )
 
     release_pipe(pipe_nr)
 
