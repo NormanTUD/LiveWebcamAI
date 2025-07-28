@@ -515,6 +515,7 @@ def generate():
     try:
         result = run_image2image_pipeline(**params)
     except Exception as e:
+        raise from e
         print(f"Pipeline error: {e}")
         # Fallback: versuche mit Standard-Params
         print("Retrying with fallback parameters...")
