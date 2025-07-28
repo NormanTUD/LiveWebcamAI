@@ -1,3 +1,4 @@
+print("Importing default modules")
 import socket
 import sys
 import base64
@@ -12,20 +13,26 @@ import time
 import inspect
 from collections import deque
 
+print("Importing typing")
 from typing import Optional
 
+print("Importing rich")
 from rich.console import Console
 from rich.table import Table
 from rich import box
 from rich.style import Style
 
+print("Importing special modules")
 from PIL import Image
 import torch
 from diffusers import AutoPipelineForImage2Image, DEISMultistepScheduler
 from flask import Flask, request, abort, Response, send_file, jsonify
 from beartype import beartype
+print("Done importing modules")
 
+print("Defining console")
 console = Console()
+print("Done defining console")
 
 CURRENTLY_LOADING_PIPELINE = False
 CURRENT_MODEL_ID = None
