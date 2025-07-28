@@ -209,29 +209,40 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: 
     try:
         previous_latents = LATENTS_BUFFER[0] if LATENTS_BUFFER else None
         console.print("Führe Warmup-Durchlauf durch...")
+
+        try:
+            # Hole die Funktion aus PIPES für den angegebenen pipe_nr
+            pipe_func = PIPES[pipe_nr]["function"]
+        except (KeyError, IndexError) as error:
+            raise ValueError(f"Ungültiger pipe_nr {pipe_nr} oder fehlende Funktion in PIPES: {error}")
+
+        # Erstelle das Basisparameter-Wörterbuch, das in jedem Fall übergeben wird
+        params = {
+            "prompt": prompt,
+            "prompt_embeds": get_prompt_embeds(prompt),
+            "image": [image],
+            "num_inference_steps": 2,
+            "callback_on_step_end": save_latents_callback,
+            "callback_on_step_end_tensor_inputs": ["latents"],
+            "guidance_scale": guidance_scale,
+        }
+
+        # Füge den Parameter 'latents' hinzu, falls vorhanden
+        if previous_latents:
+            try:
+                params["latents"] = previous_latents.to(f"cuda:{pipe_nr}")
+            except Exception as error:
+                raise RuntimeError(f"Fehler beim Konvertieren von previous_latents für cuda:{pipe_nr}: {error}")
+
+        # Füge den Parameter 'ip_adapter_image' hinzu, falls PREVIOUS_FRAMES vorhanden sind
         if len(PREVIOUS_FRAMES):
-            _ = PIPES[pipe_nr]["function"](
-                prompt=prompt,
-                prompt_embeds=get_prompt_embeds(prompt),
-                image=[image],
-                ip_adapter_image=PREVIOUS_FRAMES,
-                num_inference_steps=2,
-                latents=previous_latents.to(f"cuda:{pipe_nr}"),
-                callback_on_step_end=save_latents_callback,
-                callback_on_step_end_tensor_inputs=["latents"],
-                guidance_scale=guidance_scale
-            )
-        else:
-            _ = PIPES[pipe_nr]["function"](
-                prompt=prompt,
-                prompt_embeds=get_prompt_embeds(prompt),
-                image=[image],
-                num_inference_steps=2,
-                latents=previous_latents.to(f"cuda:{pipe_nr}"),
-                callback_on_step_end=save_latents_callback,
-                callback_on_step_end_tensor_inputs=["latents"],
-                guidance_scale=guidance_scale
-            )
+            params["ip_adapter_image"] = PREVIOUS_FRAMES
+
+        try:
+            # Rufe die Funktion mit den erstellten Parametern auf
+            result = pipe_func(**params)
+        except Exception as error:
+            raise RuntimeError(f"Aufruf der Pipe-Funktion schlug fehl: {error}")
         WARMUP_DONE = True
     except Exception as e:
         logging.warning(f"Warmup fehlgeschlagen (wird ignoriert): {e}")
