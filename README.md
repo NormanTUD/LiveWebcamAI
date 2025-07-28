@@ -5,6 +5,7 @@ This project connects a browser-based webcam interface with a Stable-Diffusion-l
 
 Directory Structure:
 --------------------
+```
 backend/
 ├── main.py              → Backend service that submits Slurm jobs via SSH
 ├── requirements.txt     → Backend dependencies
@@ -17,6 +18,7 @@ frontend/
 ├── run.sh               → Script to launch frontend server
 ├── static/              → Static resources (JS, CSS, etc.)
 ├── templates/           → HTML templates
+```
 
 How it Works:
 -------------
@@ -38,18 +40,18 @@ Requirements:
 Setup:
 ------
 1. Frontend:
-   `cd frontend`
-   `./run.sh`
-   # Visit http://localhost:5000 in your browser
+   - `cd frontend`
+   - `./run.sh`
+   - Visit http://localhost:5000 in your browser
 
 2. Backend:
-   ssh to HPC
-   `cd backend`
-   `sbatch run.sbatch`
-   # The backend connects to HPC via SSH and submits the job using run.sbatch
+   - ssh to HPC
+   - `cd backend`
+   - `sbatch run.sbatch`
+   - The backend connects to HPC via SSH and submits the job using run.sbatch
 
 3. Set up a persistent SSH tunnel (e.g. in a `tmux` session):
-   `ssh -L 9932:localhost:9932 -J jumphost_username@jumphost_server.com,hpc_user@login.hpc_system.de node_user@node_name`
+   - `ssh -L 9932:localhost:9932 -J jumphost_username@jumphost_server.com,hpc_user@login.hpc_system.de node_user@node_name`
 
 Notes:
 ------
