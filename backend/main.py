@@ -515,24 +515,24 @@ def generate():
 
     pipeline_start_time = time.time()
 
-    try:
-        result = run_image2image_pipeline(**params)
-    except Exception as e:
-        print(f"Pipeline error: {e}")
-        # Fallback: versuche mit Standard-Params
-        print("Retrying with fallback parameters...")
-        fallback_params = {
-            **params,
-            "num_inference_steps": 25,
-            "strength": 0.4,
-            "guidance_scale": 7.5,
-        }
-        try:
-            result = run_image2image_pipeline(**fallback_params)
-        except Exception as e2:
-            print(f"Fallback also failed: {e2}")
-            shutil.rmtree(tmp_dir)
-            abort(500, description="Image generation failed after fallback")
+    #try:
+    result = run_image2image_pipeline(**params)
+    #except Exception as e:
+    #    print(f"Pipeline error: {e}")
+    #    # Fallback: versuche mit Standard-Params
+    #    print("Retrying with fallback parameters...")
+    #    fallback_params = {
+    #        **params,
+    #        "num_inference_steps": 25,
+    #        "strength": 0.4,
+    #        "guidance_scale": 7.5,
+    #    }
+    #    try:
+    #        result = run_image2image_pipeline(**fallback_params)
+    #    except Exception as e2:
+    #        print(f"Fallback also failed: {e2}")
+    #        shutil.rmtree(tmp_dir)
+    #        abort(500, description="Image generation failed after fallback")
 
     pipeline_start_end = time.time()
 
