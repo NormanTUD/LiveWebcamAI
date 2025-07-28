@@ -206,7 +206,8 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: 
 
         # Füge den Parameter 'ip_adapter_image' hinzu, falls PREVIOUS_FRAMES vorhanden sind
         if len(PREVIOUS_FRAMES):
-            params["ip_adapter_image"] = list(PREVIOUS_FRAMES)
+            #params["ip_adapter_image"] = list(PREVIOUS_FRAMES)
+            pass
 
         try:
             # Rufe die Funktion mit den erstellten Parametern auf
@@ -290,7 +291,7 @@ def run_image2image_pipeline(
     start = time.perf_counter()
     console.print("🖼️ Starte Bildgenerierung mit Diffusion Pipeline...")
 
-    base_args = {
+    params = {
         "prompt": prompt,
         "negative_prompt": negative_prompt,
         "image": [init_image],
@@ -301,12 +302,13 @@ def run_image2image_pipeline(
     }
 
     if PREVIOUS_FRAMES is not None and len(PREVIOUS_FRAMES) != 0:
-        base_args["ip_adapter_image"] = list(PREVIOUS_FRAMES)
+        #params["ip_adapter_image"] = list(PREVIOUS_FRAMES)
+        pass
 
-    console.print("base_args:")
-    console.print(base_args)
+    console.print("params:")
+    console.print(params)
 
-    output = PIPES[pipe_nr]["function"](**base_args)
+    output = PIPES[pipe_nr]["function"](**params)
 
     release_pipe(pipe_nr)
 
