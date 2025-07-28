@@ -24,7 +24,8 @@ from rich.style import Style
 print("Importing special modules")
 from PIL import Image
 import torch
-from diffusers import AutoPipelineForImage2Image, DEISMultistepScheduler
+from diffusers import AutoPipelineForImage2Image, DEISMultistepScheduler, IPAdapter
+from diffusers.utils import load_image
 from flask import Flask, request, abort, Response, send_file, jsonify
 from beartype import beartype
 print("Done importing modules")
@@ -73,7 +74,7 @@ def server_info():
     return jsonify(info)
 
 @beartype
-def load_image(path: str, size=(512, 512)) -> Image.Image:
+def my_load_image(path: str, size=(512, 512)) -> Image.Image:
     if not os.path.exists(path):
         logging.error(f"Bilddatei '{path}' nicht gefunden!")
         sys.exit(1)
@@ -159,6 +160,16 @@ def load_pipeline(model_id: str) -> None:
                 console.print(table)
 
             CURRENT_MODEL_ID = model_id
+
+            ip_adapter = IPAdapter.from_pretrained(
+                "h94/IP-Adapter",
+                subfolder="models",
+                torch_dtype=torch.float16
+            )
+
+            pipe["ip_adapter"] = ip_adapter
+
+            pipeline.load_ip_adapter(ip_adapter)
 
             insert_or_replace(i, pipe)
 
@@ -369,7 +380,7 @@ def parse_args():
 def main() -> None:
     clean_memory()
 
-    init_image = load_image(args.input)
+    init_image = my_load_image(args.input)
 
     result = run_image2image_pipeline(
         prompt=args.prompt,
@@ -449,7 +460,7 @@ def generate():
 
     # Bild laden
     print(f"Loading input image from {input_path}...")
-    init_image = load_image(input_path)
+    init_image = my_load_image(input_path)
     print("Image loaded successfully.")
 
     output_filename = f"{uuid.uuid4().hex}.png"
