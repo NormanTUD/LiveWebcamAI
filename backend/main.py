@@ -164,9 +164,8 @@ def load_pipeline(model_id: str) -> None:
 
             pipe["function"].load_ip_adapter("h94/IP-Adapter", subfolder="sdxl_models", weight_name="ip-adapter_sdxl.bin")
             
-            for name, module in pipe.unet.named_modules():
-                if hasattr(module, "set_attn_processor"):
-                    module.set_attn_processor(SlicedAttnProcessor(slice_size=1))
+            pipe["function"].disable_attention_slicing()
+
 
             insert_or_replace(i, pipe)
 
