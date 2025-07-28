@@ -182,7 +182,6 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: 
     if WARMUP_DONE:
         return
     try:
-        previous_latents = LATENTS_BUFFER[0] if LATENTS_BUFFER else None
         console.print("Führe Warmup-Durchlauf durch...")
 
         try:
@@ -196,17 +195,8 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: 
             "prompt": prompt,
             "image": [image],
             "num_inference_steps": 2,
-            "callback_on_step_end": save_latents_callback,
-            "callback_on_step_end_tensor_inputs": ["latents"],
             "guidance_scale": guidance_scale,
         }
-
-        # Füge den Parameter 'latents' hinzu, falls vorhanden
-        if previous_latents:
-            try:
-                params["latents"] = previous_latents.to(f"cuda:{pipe_nr}")
-            except Exception as error:
-                raise RuntimeError(f"Fehler beim Konvertieren von previous_latents für cuda:{pipe_nr}: {error}")
 
         # Füge den Parameter 'ip_adapter_image' hinzu, falls PREVIOUS_FRAMES vorhanden sind
         if len(PREVIOUS_FRAMES):
@@ -237,11 +227,6 @@ def block_pipe(pipe_nr) -> None:
 @beartype
 def release_pipe(pipe_nr) -> None:
     PIPES[pipe_nr]["is_blocked"] = False
-
-def save_latents_callback(step: int, timestep: int, latents: torch.Tensor):
-    # Speichert das letzte Latents-Tensor
-    LATENTS_BUFFER.clear()
-    LATENTS_BUFFER.append(latents.detach().cpu().clone())
 
 @beartype
 def run_image2image_pipeline(
@@ -293,8 +278,6 @@ def run_image2image_pipeline(
     end = time.perf_counter()
     timings["Seed setzen"] = end - start
 
-    previous_latents = LATENTS_BUFFER[0] if latents_buffer else None
-
     # Schritt 4: Bildgenerierung
     start = time.perf_counter()
     console.print("🖼️ Starte Bildgenerierung mit Diffusion Pipeline...")
@@ -304,9 +287,6 @@ def run_image2image_pipeline(
         image=[init_image],
         generator=GENERATOR,
         num_inference_steps=num_inference_steps,
-        latents=previous_latents.to(f"cuda:{pipe_nr}"),
-        callback_on_step_end=save_latents_callback,
-        callback_on_step_end_tensor_inputs=["latents"],
         ip_adapter_image=PREVIOUS_FRAMES,
         guidance_scale=guidance_scale,
         strength=strength
