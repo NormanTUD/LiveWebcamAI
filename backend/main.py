@@ -12,6 +12,7 @@ import logging
 import time
 import inspect
 from collections import deque
+from transformers import CLIPTokenizer, CLIPTextModel
 
 print("Importing typing")
 from typing import Optional
@@ -34,6 +35,7 @@ print("Defining console")
 console = Console()
 print("Done defining console")
 
+GENERATOR = None
 CURRENTLY_LOADING_PIPELINE = False
 CURRENT_MODEL_ID = None
 LAST_SUCCESSFUL_REQUEST_TIME = None
@@ -45,6 +47,30 @@ PREVIOUS_FRAMES = deque(maxlen=100)
 
 # Max 50 MB Upload limit (50 * 1024 * 1024 bytes)
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024
+
+tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
+text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")
+
+# Interne Funktion, die das eigentliche Encoding macht
+def _encode_prompt(prompt: str) -> torch.Tensor:
+    inputs = tokenizer(prompt, return_tensors="pt", padding=True, truncation=True)
+    with torch.no_grad():
+        outputs = text_encoder(**inputs)
+    return outputs.last_hidden_state
+
+# Memoized Wrapper für _encode_prompt, wandelt das Ergebnis in bytes für den Cache
+_prompt_cache = {}
+
+def get_prompt_embeds(prompt: str) -> torch.Tensor:
+    if prompt in _prompt_cache:
+        return _prompt_cache[prompt]
+    try:
+        result = _encode_prompt(prompt)
+        _prompt_cache[prompt] = result
+        return result
+    except Exception as e:
+        print(f"Fehler bei der Prompt-Embedding-Erzeugung: {e}")
+        raise
 
 @beartype
 def setup_logging() -> None:
@@ -176,7 +202,7 @@ def load_pipeline(model_id: str) -> None:
 WARMUP_DONE = False
 
 @beartype
-def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int):
+def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: str):
     global WARMUP_DONE
     if WARMUP_DONE:
         return
@@ -184,7 +210,8 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int):
         console.print("Führe Warmup-Durchlauf durch...")
         if len(PREVIOUS_FRAMES):
             _ = PIPES[pipe_nr]["function"](
-                prompt="simple warmup",
+                prompt=prompt,
+                prompt_embeds=get_prompt_embeds(prompt),
                 image=[image],
                 ip_adapter_image=PREVIOUS_FRAMES,
                 num_inference_steps=2,
@@ -192,7 +219,8 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int):
             )
         else:
             _ = PIPES[pipe_nr]["function"](
-                prompt="simple warmup",
+                prompt=prompt,
+                prompt_embeds=get_prompt_embeds(prompt),
                 image=[image],
                 num_inference_steps=2,
                 guidance_scale=guidance_scale
@@ -230,6 +258,7 @@ def run_image2image_pipeline(
     clamped_values: Optional[dict] = None,
     model: str = "dreamlike-art/dreamlike-photoreal-2.0"
 ) -> Optional[Image.Image]:
+    global GENERATOR
     start_total = time.perf_counter()
     console.rule("[bold green]Start: run_image2image_pipeline")
 
@@ -254,13 +283,14 @@ def run_image2image_pipeline(
 
     # Schritt 2: Warmup
     start = time.perf_counter()
-    run_warmup(init_image, guidance_scale, pipe_nr)
+    run_warmup(init_image, guidance_scale, pipe_nr, prompt)
     end = time.perf_counter()
     timings["Warmup"] = end - start
 
     # Schritt 3: Generator vorbereiten
     start = time.perf_counter()
-    generator = torch.Generator(device=f"cuda:{pipe_nr}").manual_seed(seed)
+    if GENERATOR is None:
+        GENERATOR = torch.Generator(device=f"cuda:{pipe_nr}").manual_seed(seed)
     end = time.perf_counter()
     timings["Seed setzen"] = end - start
 
@@ -269,11 +299,12 @@ def run_image2image_pipeline(
     console.print("🖼️ Starte Bildgenerierung mit Diffusion Pipeline...")
     output = PIPES[pipe_nr]["function"](
         prompt=prompt,
+        prompt_embeds=get_prompt_embeds(prompt),
         negative_prompt=negative_prompt,
         image=[init_image],
-        generator=generator,
+        generator=GENERATOR,
         num_inference_steps=num_inference_steps,
-        previous_frames=PREVIOUS_FRAMES,
+        ip_adapter_image=PREVIOUS_FRAMES,
         guidance_scale=guidance_scale,
         strength=strength
     )
