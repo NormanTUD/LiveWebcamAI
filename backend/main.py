@@ -1,4 +1,3 @@
-print("Importing default modules")
 import socket
 import sys
 import base64
