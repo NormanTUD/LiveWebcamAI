@@ -223,8 +223,8 @@ def run_warmup(image: Image.Image, guidance_scale: float, pipe_nr: int, prompt: 
             "guidance_scale": guidance_scale,
         }
 
-        if "kwargs" not in params or params["kwargs"] is None:
-            params["kwargs"] = {}
+        if "added_cond_kwargs" not in params or params["added_cond_kwargs"] is None:
+            params["added_cond_kwargs"] = {}
 
         #if PREVIOUS_FRAMES is not None and len(PREVIOUS_FRAMES) != 0:
         #    params["ip_adapter_image"] = list(PREVIOUS_FRAMES)[-1]
@@ -326,8 +326,8 @@ def run_image2image_pipeline(
         "strength": strength
     }
 
-    if "kwargs" not in params or params["kwargs"] is None:
-        params["kwargs"] = {}
+    if "added_cond_kwargs" not in params or params["added_cond_kwargs"] is None:
+        params["added_cond_kwargs"] = {}
 
     if PREVIOUS_FRAMES is not None and len(PREVIOUS_FRAMES) != 0:
         params["ip_adapter_image"] = list(PREVIOUS_FRAMES)[-1]
